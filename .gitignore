@@ -1,0 +1,9 @@
+*.pyc
+*.log
+*.bat
+*.sh
+*.session
+*.txt
+trash/*.*
+sessions.py
+test.py
