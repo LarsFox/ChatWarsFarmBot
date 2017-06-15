@@ -459,10 +459,12 @@ class ChatWarsFarmBot(TelegramClient):
 
     def pay_visit(self, command, prob=0.7):
         if random.random() < prob:
-            return self.update_bot(command)
+            self.update_bot(command)
+            return self.check_captcha()
 
         else:
             return self.sleep(10, "Ничего не отправляю, просто сплю")
+
 
     # Конец
 
