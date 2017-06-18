@@ -73,16 +73,13 @@ class ChatWarsFarmBot(TelegramClient):
     def spam(self):
         self.spamming = True
 
-        self.exhaust = time.time()           # время отдышаться
+        self.exhaust = time.time()       # время отдышаться
 
-        self.message = self.bot_message      # последнее сообщение от Бота
-        self.old_id = 0                      # и его номер
+        self.message = self.bot_message  # последнее сообщение от Бота
+        self.old_id = 0                  # и его номер
 
-        self.order = None                    # последний приказ в Супергруппе
-
-        self.have_asked_report = False       # отправляем один раз после боя
-        self.have_sent_defend_order = False  # отправляем один раз до боя
-        self.equipped_to_defend = True       # по умолчанию носим кирку и щит
+        self.order = None                # последний приказ в Супергруппе
+        self.sent_defend = False         # отправляем 1 раз до и после боя
 
         while self.spamming:
             # Бой в 12:00. 11:00 в игре == 8:00 UTC+0
@@ -107,8 +104,7 @@ class ChatWarsFarmBot(TelegramClient):
 
                 # На 57-й идем в защиту
                 elif now.minute >= 57:
-                    if not self.have_sent_defend_order:
-                        self.defend()
+                    self.defend()
 
                     self.sleep(5, "Подбираюсь к отправке приказа")
 
@@ -315,7 +311,7 @@ class ChatWarsFarmBot(TelegramClient):
         self.order = WAR.get(WAR_COMMANDS.get(self.group_message.lower()))
 
         if self.order and self.order != self.flag:
-            self.hero()
+            self.hero(1)
             self.log("Иду в атаку")
 
             self.update_bot(ATTACK)
@@ -329,17 +325,18 @@ class ChatWarsFarmBot(TelegramClient):
 
     def defend(self):
         """ Отправляем приказ к защите """
-        self.hero()
+        self.hero(1)
 
-        if "Отдых" in self.message:
-            self.log("Становлюсь в защиту")
-            self.have_asked_report = False
-            self.update_bot(DEFEND)
+        if not self.sent_defend:
+            if "Отдых" in self.message:
+                self.log("Становлюсь в защиту")
+                self.update_bot(DEFEND)
 
-            if "будем держать оборону" in self.message:
-                self.update_bot(self.flag)
+                if "будем держать оборону" in self.message:
+                    self.update_bot(self.flag)
 
-        self.have_sent_defend_order = True
+                self.have_asked_report = False
+                self.sent_defend = True
 
         return True
 
@@ -351,12 +348,10 @@ class ChatWarsFarmBot(TelegramClient):
         Отписываемся о выполнении приказа в Супергруппу
         Забываем приказ
         """
-        if not self.have_asked_report:
-            self.report()
+        if self.sent_defend:
+            self.report(1)
 
             if "завывает" not in self.message:
-                self.have_asked_report = True
-
                 if self.order is not None:
                     if self.order != self.flag:
                         self.send_text(
@@ -377,7 +372,7 @@ class ChatWarsFarmBot(TelegramClient):
                 else:
                     self.send_text(self.group, "Не увидел приказ :(")
 
-                self.have_sent_defend_order = False
+                self.sent_defend = False
                 self.send_penguin()
 
         return True
@@ -390,8 +385,6 @@ class ChatWarsFarmBot(TelegramClient):
                 self.update_bot(item, sleep=3)
 
         self.log("Завершаю команду {}".format(state))
-        self.equipped_to_defend = state == 'defend'
-
         return True
 
     # Конец
@@ -426,12 +419,12 @@ class ChatWarsFarmBot(TelegramClient):
 
     # Немедленные запросы (pay_visit)
 
-    def hero(self):
+    def hero(self, prob=0.7):
         """
         Запрашивает профиль героя
         И прокачивает уровень, если может
         """
-        self.pay_visit(HERO)
+        self.pay_visit(HERO, prob)
 
         if LEVEL_UP in self.message:
             self.log("Ух-ты, новый уровень!")
@@ -448,8 +441,8 @@ class ChatWarsFarmBot(TelegramClient):
     def worldtop(self):
         return self.pay_visit("/worldtop")
 
-    def report(self):
-        return self.pay_visit("/report")
+    def report(self, prob=0.7):
+        return self.pay_visit("/report", prob)
 
     def commands(self):
         return self.pay_visit(random.choice(COMMANDS))
