@@ -25,14 +25,13 @@ class ChatWarsFarmBot(TelegramClient):
 
         self.flag = WAR[flag]               # Флаг из sessions
         self.equipment = params["equip"]    # Снаряжение из sessions
+        self.level = params["level"]        # Уровень из sessions
+        self.girl = params["girl"]
         self.locations = LOCATIONS          # Локации из data
 
         # Выбираем формат вывода данных
         if self.silent:
             self.log_file = "logs/" + self.user + ".log"
-
-            with open(self.log_file, 'w') as target:
-                target.truncate()
 
         # Если запускаем в Виндоуз, переименовываем окно
         if os.name == 'nt':
@@ -95,6 +94,7 @@ class ChatWarsFarmBot(TelegramClient):
             # Есть вероятность, что никто не поможет
             self.help_other()
 
+            # (!) переписать для ранних приказов
             # С 47-й минуты ничего не делаем
             if (now.hour) % 4 == 0 and now.minute >= 47:
                 # На 59-й идем в атаку
@@ -102,14 +102,13 @@ class ChatWarsFarmBot(TelegramClient):
                     self.attack()
                     self.sleep(45, "~Минутку посплю после приказа", False)
 
-                # На 57-й идем в защиту
-                elif now.minute >= 57:
-                    self.defend()
-
+                # На 58-й уменьшаем время ожидания
+                elif now.minute >= 58:
                     self.sleep(5, "Подбираюсь к отправке приказа")
 
-                # С 54-й спим по минуте
+                # С 54-й спим по минуте и заранее становимся в защиту
                 elif now.minute >= 54:
+                    self.defend()
                     self.sleep(60, "Сплю, пока битва близко")
 
                 # С 47-й спим по две минуты
@@ -125,7 +124,7 @@ class ChatWarsFarmBot(TelegramClient):
             else:
                 if time.time() > self.exhaust:
                     self.send_locations()
-                    self.sleep(105, "~Все сделал, посплю пару минут", False)
+                    self.sleep(105, "~А теперь посплю пару минут", False)
 
                 else:
                     self.sleep(105, "~Сил нет, сплю две минуты", False)
@@ -133,6 +132,12 @@ class ChatWarsFarmBot(TelegramClient):
         return True
 
     # Системные функции
+
+    @property
+    def la(self):
+        if self.girl:
+            return "а"
+        return ""
 
     def log(self, text, extra=""):
         """ Выводим в консоль или лог-файл """
@@ -217,7 +222,7 @@ class ChatWarsFarmBot(TelegramClient):
     def check_captcha(self):
         """ Проверяем капчу от бота """
         if "На выходе из замка" in self.message:
-            self.log("Обнаружил капчу")
+            self.log("Капча!")
             self.send_text(self.captcha_bot, self.message)
             self.sleep(10, "Десять секунд, на всякий случай жду Капчеватора")
 
@@ -228,11 +233,11 @@ class ChatWarsFarmBot(TelegramClient):
                 self.update_bot(captcha_answer)
 
                 if "Ты отправился" in self.message:
-                    self.log("Отправился и попутно обоссал капчу")
+                    self.log("Капча пробита!")
                     return True
 
                 elif "Ты ответил правильно" in self.message:
-                    self.log("Слишком просто")
+                    self.log("Слишком просто!")
                     return True
 
             return False
@@ -292,6 +297,9 @@ class ChatWarsFarmBot(TelegramClient):
 
     def send_penguin(self):
         """ Отправляем инвентарь Пингвину """
+        if self.level < 15:
+            return False
+
         self.send_text(self.trade_bot, "/start")
         self.sleep(3, "Отправляю инвентарь пингвину")
         self.send_text(self.penguin, self.get_message(self.trade_bot)[1])
@@ -356,21 +364,24 @@ class ChatWarsFarmBot(TelegramClient):
                     if self.order != self.flag:
                         self.send_text(
                             self.group,
-                            "Атаковал {}".format(self.order)
+                            "Атаковал" + self.la + " {}".format(self.order)
                         )
                         self.equip("defend")
 
                     else:
                         self.send_text(
                             self.group,
-                            "Защищал {}".format(self.order)
+                            "Защищал" + self.la + " {}".format(self.order)
                         )
 
                     self.log("Приказ устарел, забываю его")
                     self.order = None
 
                 else:
-                    self.send_text(self.group, "Не увидел приказ :(")
+                    self.send_text(
+                        self.group,
+                        "Не увидел" + self.la + " приказ :("
+                    )
 
                 self.sent_defend = False
                 self.send_penguin()
@@ -434,7 +445,7 @@ class ChatWarsFarmBot(TelegramClient):
                 self.update_bot(PLUS_ONE)
 
             else:
-                self.log("Странно, я не получил выбор")
+                self.log("Странно, где же выбор?")
 
         return True
 
@@ -471,12 +482,11 @@ class ChatWarsFarmBot(TelegramClient):
         # (!)
         return True
 
-    def woods(self):
+    def farm(self, prob=0.5):
+        if self.level >= ENTER_CAVE:
+            if random.random() < prob:
+                return self.go(CAVE)
         return self.go(WOODS)
-
-    def cave(self):
-        # (!) с 30-го уровня
-        return self.go(CAVE)
 
     def go(self, message):
         """
@@ -488,16 +498,16 @@ class ChatWarsFarmBot(TelegramClient):
         go = self.update_bot(message)
 
         if "мало единиц выносливости" in self.message:
-            self.log("~Выдохся, откладываю на два часа")
+            self.log("~Выдохся, поживу без приключений пару часов")
             self.exhaust = time.time() + COOLDOWN + random.random() * 3600
             return False
 
         if "сейчас занят другим приключением" in self.message:
-            self.log("А, забыл, что я занят")
+            self.log("А, я же не дома")
             return False
 
         if go:
-            self.sleep(310, "Отправился, сплю 5 минут")
+            self.sleep(310, "Вернусь через 5 минут")
 
         else:
             self.stop()
@@ -544,7 +554,7 @@ class ChatWarsFarmBot(TelegramClient):
         command = self.extract_fight_command(self.message)
 
         if command:
-            self.sleep(5, "Увидел монстра, сплю пять секунд перед дракой")
+            self.sleep(5, "А вот и монстр! Сплю пять секунд перед дракой")
             self.send_text(self.group, command)
             self.update_bot(command)
 
@@ -643,6 +653,11 @@ class Main(object):
 
     # Действие для процесса
     def launch_user(self, user, params):
+        # Очищаем лог, если перезапускаем вручную
+        if self.silent:
+            with open("logs/" + user + ".log", 'w') as target:
+                target.truncate()
+
         while True:
             tg = ChatWarsFarmBot(user, params, self.silent)
 
@@ -676,7 +691,7 @@ class Main(object):
                 self.pipes[user] += 1
 
                 if self.pipes[i] == 10:
-                    tg.log("(!) Затопила труба")
+                    tg.log("!! Затопила труба")
 
                 if self.pipes[i] == 100:
                     break
@@ -691,14 +706,14 @@ class Main(object):
 
             except Exception as e:
                 if not self.avoid_errors and not self.silent:
-                    tg.send_text(tg.group, "Капитан, у меня проблемы!")
+                    tg.send_text(tg.group, "Помогите!")
                     time.sleep(5)
                     tg.send_text(tg.group, str(e))
 
                 else:
                     raise e
 
-                tg.log("(!) Ошибка:", str(e))
+                tg.log("!! Ошибка:", str(e))
                 break
 
             self.reboots[user] = True
