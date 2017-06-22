@@ -4,6 +4,6 @@
 *.sh
 *.session
 *.txt
-trash/*.*
+bin/*.*
 sessions.py
 test.py
