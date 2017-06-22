@@ -7,27 +7,52 @@ import random
 import time
 import sys
 
-from telethon import RPCError, TelegramClient
-from telethon.errors import *
+import telethon
 
-from data import *
-from sessions import *
+from client import TelethonClient
+from data import IMPORTANT, WAR, WAR_COMMANDS, COMMANDS, \
+                 DEFEND, ATTACK, HERO, CASTLE, WOODS, CAVE, \
+                 LOCATIONS, COOLDOWN, \
+                 CARAVAN, FIGHT, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
+
+from sessions import API_ID, API_HASH, SUPERGROUP_ID, ENTER_CAVE, SESSIONS
 
 
-class ChatWarsFarmBot(TelegramClient):
+class ChatWarsFarmBot():
     def __init__(self, user, params, silent=True):
+        # Подключаемся к Телеграму
+        self.client = TelethonClient(user, params['phone'])
+
+        # Проверяем последние 10 диалогов
+        _, entities = self.client.get_dialogs(10)
+
+        # Создаем контакты по id из data
+        for entity in entities:
+            important = IMPORTANT.get(entity.id)
+
+            if important:
+                setattr(self, important, entity)
+
         # Собираем данные
-        user_phone = params['phone']
         flag = params['flag']
 
         self.user = user
         self.silent = silent
 
-        self.flag = WAR[flag]               # Флаг из sessions
-        self.equipment = params["equip"]    # Снаряжение из sessions
-        self.level = params["level"]        # Уровень из sessions
+        self.flag = WAR[flag]             # Флаг из sessions
+        self.equipment = params["equip"]  # Снаряжение из sessions
+        self.level = params["level"]      # Уровень из sessions
         self.girl = params["girl"]
-        self.locations = LOCATIONS          # Локации из data
+        self.locations = LOCATIONS        # Локации из data
+
+        self.exhaust = time.time()        # время отдышаться
+
+        self.message = self.bot_message   # последнее сообщение от Бота
+        self.old_id = 0                   # и его номер
+        self.last_id = 0
+
+        self.order = None                 # последний приказ в Супергруппе
+        self.sent_defend = False          # отправляем 1 раз до и после боя
 
         # Выбираем формат вывода данных
         if self.silent:
@@ -37,50 +62,11 @@ class ChatWarsFarmBot(TelegramClient):
         if os.name == 'nt':
             os.system("title " + self.user + " as ChatWarsFarmBot")
 
-        # Создаем файл сессии
-        super().__init__("sessions/" + self.user, API_ID, API_HASH)
-
-        # ... и подключаемся к Телеграму
-        self.connect()
-
-        # Если ТГ просит код, вводим его и умираем
-        # Если много аккаунтов, запускаем через -l
-        if not self.is_user_authorized():
-            self.log('Первый запуск. Запрашиваю код...')
-            self.send_code_request(user_phone)
-
-            code_ok = False
-            while not code_ok:
-                code = input('Введите полученный в Телеграме код: ')
-                code_ok = self.sign_in(user_phone, code)
-
-            sys.exit("{} код получил, перезапускай.".format(self.user))
-
-        # Не держим больше 10 диалогов
-        dialogs, entities = self.get_dialogs(10)
-
-        # Создаем контакты по id из data
-        for entity in entities:
-            important = IMPORTANT.get(entity.id)
-
-            if important:
-                setattr(self, important, entity)
-
         # Поехали!
         self.log("Сеанс {} под флагом {} открыт".format(self.user, flag))
 
     def spam(self):
-        self.spamming = True
-
-        self.exhaust = time.time()       # время отдышаться
-
-        self.message = self.bot_message  # последнее сообщение от Бота
-        self.old_id = 0                  # и его номер
-
-        self.order = None                # последний приказ в Супергруппе
-        self.sent_defend = False         # отправляем 1 раз до и после боя
-
-        while self.spamming:
+        while True:
             # Бой в 12:00. 11:00 в игре == 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
@@ -158,75 +144,33 @@ class ChatWarsFarmBot(TelegramClient):
         else:
             print(message)
 
-    def sleep(self, z, message=None, exact=True):
+    def sleep(self, duration, message=None, exact=True):
         """ Спим и логгируем """
         if not exact:
-            z += random.random() * 30
+            duration += random.random() * 30
 
         if message:
             if "{" in message:
-                self.log(message.format(z/60))
+                self.log(message.format(duration/60))
 
             else:
                 self.log(message)
 
         else:
-            self.log("Ложусь спать на {:.3f} минут".format(z/60))
+            self.log("Ложусь спать на {:.3f} минут".format(duration/60))
 
-        time.sleep(z)
+        time.sleep(duration)
 
         return True
-
-    def send_text(self, entity, message):
-        """ Отправляем сообщение определенному адресату-entity """
-        self.send_message(entity, message, markdown=True, no_web_page=True)
-
-    def get_message(self, entity, repeat=True):
-        """
-        Собираем последнее сообщение
-        entity: адресат-entity
-        repeat: повторяем сбор, пока не получим сообщение от адресата
-        Возвращаем номер сообщения и его содержимое
-        """
-        num, messages, senders = self.get_message_history(entity, 1)
-
-        if repeat:
-            for x in range(15):
-                if senders[0].id == entity.id:
-                    break
-
-                num, messages, senders = self.get_message_history(entity, 1)
-                self.sleep(3, "Три секунды, жду новое сообщение")
-
-        message = messages[0]
-        sender = senders[0]
-
-        # self.log(message)
-
-        if getattr(message, 'media', None):
-            content = '<{}> {}'.format(
-                message.media.__class__.__name__,
-                getattr(message.media, 'caption', ''))
-
-        elif hasattr(message, 'message'):
-            content = message.message
-
-        elif hasattr(message, 'action'):
-            content = message.action.encode('utf-8')
-
-        else:
-            content = message.__class__.__name__
-
-        return message.id, content
 
     def check_captcha(self):
         """ Проверяем капчу от бота """
         if "На выходе из замка" in self.message:
             self.log("Капча!")
-            self.send_text(self.captcha_bot, self.message)
+            self.client.send_text(self.captcha_bot, self.message)
             self.sleep(10, "Десять секунд, на всякий случай жду Капчеватора")
 
-            captcha_answer = self.get_message(self.captcha_bot)[1]
+            _, captcha_answer = self.client.get_message(self.captcha_bot)
 
             if "Не распознано" not in captcha_answer:
                 self.log("Отдаю ответ")
@@ -260,11 +204,11 @@ class ChatWarsFarmBot(TelegramClient):
         sleep: пауза после отправки сообщения
         """
         if message:
-            self.send_text(self.cw, message)
+            self.client.send_text(self.cw, message)
             self.sleep(sleep, "Сплю пять секунд после отправки сообщения")
 
         for i in range(1, 7):
-            self.last_id, self.message = self.get_message(self.cw)
+            self.last_id, self.message = self.client.get_message(self.cw)
 
             if self.old_id == self.last_id:
                 self.sleep(10, "Жду сообщение: {}/6".format(i))
@@ -275,10 +219,10 @@ class ChatWarsFarmBot(TelegramClient):
 
         return self.check_captcha()
 
-    def stop(self, reason="капча"):
+    def stop(self):
         """ Убиваем процесс """
-        self.send_text(self.group, "У меня тут проблема")
-        self.send_text(self.group, self.message)
+        self.client.send_text(self.group, "У меня тут проблема")
+        self.client.send_text(self.group, self.message)
         sys.exit()  # (!) проверить, выключаются ли все боты или один
 
     # Конец
@@ -288,21 +232,25 @@ class ChatWarsFarmBot(TelegramClient):
     @property
     def bot_message(self):
         """ Последнее сообщение от бота игры """
-        return self.get_message(self.cw)[1]
+        _, message = self.client.get_message(self.cw)
+        return message
 
     @property
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
-        return self.get_message(self.group, False)[1]
+        _, message = self.client.get_message(self.group, False)
+        return message
 
     def send_penguin(self):
         """ Отправляем инвентарь Пингвину """
         if self.level < 15:
             return False
 
-        self.send_text(self.trade_bot, "/start")
+        self.client.send_text(self.trade_bot, "/start")
         self.sleep(3, "Отправляю инвентарь пингвину")
-        self.send_text(self.penguin, self.get_message(self.trade_bot)[1])
+
+        _, message = self.client.get_message(self.trade_bot)
+        self.client.send_text(self.penguin, message)
         return True
 
     # Конец
@@ -343,7 +291,6 @@ class ChatWarsFarmBot(TelegramClient):
                 if "будем держать оборону" in self.message:
                     self.update_bot(self.flag)
 
-                self.have_asked_report = False
                 self.sent_defend = True
 
         return True
@@ -362,14 +309,14 @@ class ChatWarsFarmBot(TelegramClient):
             if "завывает" not in self.message:
                 if self.order is not None:
                     if self.order != self.flag:
-                        self.send_text(
+                        self.client.send_text(
                             self.group,
                             "Атаковал" + self.la + " {}".format(self.order)
                         )
                         self.equip("defend")
 
                     else:
-                        self.send_text(
+                        self.client.send_text(
                             self.group,
                             "Защищал" + self.la + " {}".format(self.order)
                         )
@@ -378,7 +325,7 @@ class ChatWarsFarmBot(TelegramClient):
                     self.order = None
 
                 else:
-                    self.send_text(
+                    self.client.send_text(
                         self.group,
                         "Не увидел" + self.la + " приказ :("
                     )
@@ -389,7 +336,7 @@ class ChatWarsFarmBot(TelegramClient):
         return True
 
     def equip(self, state):
-        for hand, items in self.equipment.items():
+        for _, items in self.equipment.items():
             if len(items) == 2:
                 item = EQUIP_ITEM.format(items[state])
                 self.log("Надеваю: {}".format(item))
@@ -466,36 +413,35 @@ class ChatWarsFarmBot(TelegramClient):
             self.update_bot(command)
             return self.check_captcha()
 
-        else:
-            return self.sleep(10, "Ничего не отправляю, просто сплю")
+        return self.sleep(10, "Ничего не отправляю, просто сплю")
 
 
     # Конец
 
     # Пятиминутные действия (go)
 
-    def arena(self):
-        # (!)
-        return True
+    # def arena(self):
+    #     # (!)
+    #     return True
 
-    def build(self):
-        # (!)
-        return True
+    # def build(self):
+    #     # (!)
+    #     return True
 
     def farm(self, prob=0.5):
         if self.level >= ENTER_CAVE:
             if random.random() < prob:
                 return self.go(CAVE)
-        return self.go(WOODS)
+        return self.travel(WOODS)
 
-    def go(self, message):
+    def travel(self, message):
         """
         Отправляет команду боту
         Откладывает все команды, если видит усталость
         Сражается, если видит монстра
         После запрашивает профиль героя, мол, изменилось ли что?
         """
-        go = self.update_bot(message)
+        went = self.update_bot(message)
 
         if "мало единиц выносливости" in self.message:
             self.log("~Выдохся, поживу без приключений пару часов")
@@ -506,7 +452,7 @@ class ChatWarsFarmBot(TelegramClient):
             self.log("А, я же не дома")
             return False
 
-        if go:
+        if went:
             self.sleep(310, "Вернусь через 5 минут")
 
         else:
@@ -525,8 +471,8 @@ class ChatWarsFarmBot(TelegramClient):
 
     def extract_fight_command(self, message):
         if FIGHT in message:
-            c = message.index(FIGHT)
-            return message[c:c+27]
+            command = message.index(FIGHT)
+            return message[command:command+27]
 
         return None
 
@@ -544,7 +490,7 @@ class ChatWarsFarmBot(TelegramClient):
 
         if command:
             self.log("Иду на помощь: {}".format(command))
-            self.send_text(self.group, "+")
+            self.client.send_text(self.group, "+")
             self.update_bot(command)
 
         return True
@@ -555,7 +501,7 @@ class ChatWarsFarmBot(TelegramClient):
 
         if command:
             self.sleep(5, "А вот и монстр! Сплю пять секунд перед дракой")
-            self.send_text(self.group, command)
+            self.client.send_text(self.group, command)
             self.update_bot(command)
 
         return True
@@ -567,7 +513,6 @@ class Main(object):
     def __init__(self):
         """
         -s: логгируем в файл или в консоль
-        -t: запускаем .test() в процессе первого пользователя и выводим в консо
         -e: игнорирует все ошибки и спамит о них в Супергруппу
         -l: проверяем логин и вводим телефон (только для одного пользователя)
         -c: показываем код в запущенном ТГ (только для одного пользователя)
@@ -576,7 +521,6 @@ class Main(object):
         все остальные аргументы будут приняты как имена сессии
         """
         self.silent = "-s" in sys.argv
-        self.test = "-t" in sys.argv
         self.avoid_errors = "-e" in sys.argv
         self.login = "-l" in sys.argv
         self.code = "-c" in sys.argv
@@ -586,7 +530,7 @@ class Main(object):
             if "-" not in arg
         ]
 
-        if len(self.users) == 0:
+        if not self.users:
             sys.exit("Запуск без пользователей невозможен")
 
         if " " in self.users[0]:
@@ -596,9 +540,6 @@ class Main(object):
         self.reboots = {user: reboot for user in self.users}
         self.pipes = {user: 0 for user in self.users}
 
-    def test(self):
-        pass
-
     def launch(self):
         # -l
         if self.login:
@@ -607,7 +548,7 @@ class Main(object):
 
             user = self.users[0]
             params = SESSIONS.get(user)
-            tg = ChatWarsFarmBot(user, params, self.silent)
+            bot = ChatWarsFarmBot(user, params, self.silent)
             sys.exit("Код уже был введен!")
 
         # -c
@@ -617,24 +558,13 @@ class Main(object):
 
             user = self.users[0]
             params = SESSIONS.get(user)
-            tg = ChatWarsFarmBot(user, params, self.silent)
-            sys.exit(tg.get_message(tg.telegram)[1][:23])
-
-        # -t
-        if self.test:
-            self.silent = True
-            self.avoid_errors = True
-            user = self.users[0]
-            params = SESSIONS.get(user)
-
-            tg = ChatWarsFarmBot(user, params, self.silent)
-            self.test()
-            sys.exit("Завершен.")
+            bot = ChatWarsFarmBot(user, params, self.silent)
+            sys.exit(bot.client.get_message(bot.telegram)[1][:23])
 
         # Остальной набор
         queue = mp.JoinableQueue()
 
-        for i, user in enumerate(self.users):
+        for _, user in enumerate(self.users):
             params = SESSIONS.get(user)
 
             if not params:
@@ -659,66 +589,54 @@ class Main(object):
                 target.truncate()
 
         while True:
-            tg = ChatWarsFarmBot(user, params, self.silent)
+            bot = ChatWarsFarmBot(user, params, self.silent)
 
             # Если выводим в консоль, начинаем без задержки
             if self.silent:
-                tg.sleep(random.random()*30, "Я очень люблю спать", False)
+                bot.sleep(random.random()*30, "Я очень люблю спать", False)
 
             # Перезагружаем и откладываем все действия
             if self.reboots[user]:
-                for location in tg.locations:
-                    tg.postpone_location(location)
+                for location in bot.locations:
+                    bot.postpone_location(location)
 
-                tg.send_text(tg.group, "Перепросыпаюсь")
+                bot.client.send_text(bot.group, "Перепросыпаюсь")
 
             else:
-                tg.send_penguin()
-                tg.send_text(tg.group, "Просыпаюсь")
+                bot.send_penguin()
+                bot.client.send_text(bot.group, "Просыпаюсь")
 
             # Поехали
             try:
-                tg.spam()
+                bot.spam()
 
-            except (ConnectionAbortedError,
-                    ConnectionResetError,
-                    TimeoutError) as e:
-                tg.log("Ошибка:", e.__class__.__name__)
+            except OSError as err:
+                bot.log("Ошибка:", err.__class__.__name__)
                 time.sleep(60*random.random())
 
-            except BrokenPipeError as e:
-                tg.log("Труба потекла")
-                self.pipes[user] += 1
-
-                if self.pipes[i] == 10:
-                    tg.log("!! Затопила труба")
-
-                if self.pipes[i] == 100:
-                    break
-
-            except RPCError:
-                tg.log("Ошибка РПЦ, посплю немного")
+            except telethon.RPCError:
+                bot.log("Ошибка РПЦ, посплю немного")
                 time.sleep(60*random.random())
 
-            except BadMessageError:
-                tg.log("Плохое сообщение, немного посплю")
+            except telethon.BadMessageError:
+                bot.log("Плохое сообщение, немного посплю")
                 time.sleep(120 + 60*random.random())
 
-            except Exception as e:
+            except Exception as err:
                 if not self.avoid_errors and not self.silent:
-                    tg.send_text(tg.group, "Помогите!")
+                    bot.client.send_text(bot.group, "Помогите!")
                     time.sleep(5)
-                    tg.send_text(tg.group, str(e))
+                    bot.client.send_text(bot.group, str(err))
 
                 else:
                     raise e
 
-                tg.log("!! Ошибка:", str(e))
+                bot.log("!! Ошибка:", str(err))
                 break
 
             self.reboots[user] = True
 
 
 if __name__ == '__main__':
-    l = Main()
-    l.launch()
+    MAIN = Main()
+    MAIN.launch()
