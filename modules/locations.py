@@ -62,7 +62,7 @@ LOCATIONS = {
     'castle': Location("визит в замок", "🏰Замок", True),
     'cave': Location("поход в пещеру", "🕸Пещера", False),
     'woods': Location("поход в лес", "🌲Лес", False),
-    'commands': Location("случайную команду", RANDOM_COMMANDS, True),
+    'commands': Random("случайную команду", RANDOM_COMMANDS, True),
     # 'arena': Location("поход на арену", "(!)", False),
     # 'build': Location("поход на стройку", "/build_(!)", False),
 }
