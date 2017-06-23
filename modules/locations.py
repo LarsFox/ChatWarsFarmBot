@@ -60,8 +60,8 @@ RANDOM_COMMANDS = [
 LOCATIONS = {
     'hero': Location("запрос героя", "🏅Герой", True),
     'castle': Location("визит в замок", "🏰Замок", True),
-    'woods': Location("поход в пещеру", "🕸Пещера", False),
-    'cave': Location("поход в лес", "🌲Лес", False),
+    'cave': Location("поход в пещеру", "🕸Пещера", False),
+    'woods': Location("поход в лес", "🌲Лес", False),
     'commands': Location("случайную команду", RANDOM_COMMANDS, True),
     # 'arena': Location("поход на арену", "(!)", False),
     # 'build': Location("поход на стройку", "/build_(!)", False),
