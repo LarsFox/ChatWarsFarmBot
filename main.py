@@ -1,6 +1,6 @@
 # coding=utf-8
 """
-Главный модуль
+Главный модуль запуска ботов
 """
 
 
@@ -9,9 +9,11 @@ import random
 import time
 import sys
 
+
 import telethon
 
-from bot import ChatWarsFarmBot
+
+from bot.bot import ChatWarsFarmBot
 from sessions import SESSIONS
 
 
@@ -19,7 +21,6 @@ class Main(object):
     """ Запуск бота """
     def __init__(self):
         self.silent = "-s" in sys.argv
-        self.avoid_errors = "-e" in sys.argv
         self.login = "-l" in sys.argv
         self.code = "-c" in sys.argv
 
@@ -43,7 +44,6 @@ class Main(object):
         Запускает файл с параметрами:
 
         -s: логгируем в файл или в консоль
-        -e: игнорирует все ошибки и спамит о них в Супергруппу
         -l: проверяем логин и вводим телефон (только для одного пользователя)
         -c: показываем код в запущенном ТГ (только для одного пользователя)
         -r: «перезапуск»: все действия откладываются, чтобы не спамить
@@ -80,6 +80,7 @@ class Main(object):
             if not params:
                 continue
 
+            # Без флага не запускаем
             if "flag" not in params:
                 continue
 
@@ -91,8 +92,8 @@ class Main(object):
 
         queue.join()
 
-    # Действие для процесса
     def launch_user(self, user, params):
+        """ Действие для каждого конкретного бота """
         # Очищаем лог, если перезапускаем вручную
         if self.silent:
             with open("logs/" + user + ".log", 'w') as target:
@@ -103,46 +104,34 @@ class Main(object):
 
             # Если выводим в консоль, начинаем без задержки
             if self.silent:
-                bot.sleep(random.random()*30, "Я очень люблю спать", False)
+                bot.logger.sleep(random.random()*30, "Я люблю спать", False)
 
             # Перезагружаем и откладываем все действия
             if self.reboots[user]:
-                for location in bot.locations:
-                    bot.postpone_location(location)
+                for location in bot.locations.values():
+                    location.postpone()
 
                 bot.client.send_text(bot.chats["group"], "Перепросыпаюсь")
 
             else:
-                bot.send_penguin()
+                # bot.updater.send_penguin()
                 bot.client.send_text(bot.chats["group"], "Просыпаюсь")
 
             # Поехали
             try:
-                bot.spam()
+                bot.start()
 
             except OSError as err:
-                bot.log("Ошибка:", err.__class__.__name__)
+                bot.logger.log("Ошибка: " + str(err))
                 time.sleep(60*random.random())
 
             except telethon.RPCError:
-                bot.log("Ошибка РПЦ, посплю немного")
+                bot.logger.log("Ошибка РПЦ, посплю немного")
                 time.sleep(60*random.random())
 
             except telethon.BadMessageError:
-                bot.log("Плохое сообщение, немного посплю")
+                bot.logger.log("Плохое сообщение, немного посплю")
                 time.sleep(120 + 60*random.random())
-
-            except Exception as err:
-                if not self.avoid_errors and not self.silent:
-                    bot.client.send_text(bot.chats["group"], "Помогите!")
-                    time.sleep(5)
-                    bot.client.send_text(bot.chats["group"], str(err))
-
-                else:
-                    raise err
-
-                bot.log("!! Ошибка:", str(err))
-                break
 
             self.reboots[user] = True
 
