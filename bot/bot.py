@@ -22,7 +22,7 @@ from sessions import ENTER_CAVE, SUPERGROUP_ID
 
 
 class ChatWarsFarmBot(object):
-    """ Бот для каждой сессии """
+    """ Объект бота для каждой сессии """
 
     # pylint: disable=too-many-instance-attributes
 
@@ -96,9 +96,9 @@ class ChatWarsFarmBot(object):
     # Системные функции
 
     def start(self):
-        """ Основное древо запусков функций """
+        """ Запускает бота """
         while True:
-            # Бой в 12:00. 11:00 в игре == 8:00 UTC+0
+            # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
             # Собираем сообщение
@@ -151,8 +151,8 @@ class ChatWarsFarmBot(object):
     def update(self, message=None, sleep=5):
         """
         Отправляет сообщение Боту и минуту ждет ответа
-        message: сообщение к отправке
-        sleep: пауза после отправки сообщения
+        message: строка, сообщение к отправке
+        sleep: число секунд — пауза после отправки сообщения
         """
         if message:
             self.client.send_text(self.chats["cw"], message)
@@ -171,7 +171,7 @@ class ChatWarsFarmBot(object):
         return self.captcha()
 
     def captcha(self):
-        """ Обходит капчу """
+        """ Обходит капчу и останавливает бота, если не обходит """
         if "На выходе из замка" not in self.message:
             return True
 
@@ -251,14 +251,22 @@ class ChatWarsFarmBot(object):
         Если бот проснулся, надевает защитную одежду.
         Отписывается о выполнении приказа в Супергруппу и забывает приказ
         """
+        # Отчет уже спрашивали, пропускаем
         if not self.sent_defend:
             return False
 
+        # Спрашиваем отчет
         self.update("/report")
 
+        # Бот еще не проснулся, ждем
         if "завывает" in self.message:
             return False
 
+        # Если был потерян предмет, оповещаем Супергруппу о беде
+        if "Вы потеряли" in self.message:
+            self.updater.send_group(self.message)
+
+        # Отчитываемся о приказе
         if self.order is not None:
             if self.order != self.flag:
                 self.updater.send_group(self.verbs[ATTACK] + self.order)
@@ -275,6 +283,7 @@ class ChatWarsFarmBot(object):
 
         self.sent_defend = False
 
+        # С 15-го уровня работает обмен, узнаем информацию
         if self.level > 15:
             self.updater.send_penguin()
 
