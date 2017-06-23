@@ -30,11 +30,11 @@ class Updater(object):
         return WAR.get(WAR_COMMANDS.get(self.group_message))
 
     def send_group(self, message):
-        """ Отправка сообщения группе """
+        """ Отправляет сообщение Супергруппе """
         self.client.send_text(self.chats["group"], message)
 
     def send_penguin(self):
-        """ Отправка инвентаря Пингвину """
+        """ Отправляет инвентарь Пингвину """
         self.client.send_text(self.chats["trade_bot"], "/start")
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 

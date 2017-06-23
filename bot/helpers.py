@@ -21,7 +21,7 @@ def get_fight_command(message):
 
 
 class Logger(object):
-    """ Объекты для записи сообщений """
+    """ Объект для записи сообщений, каждому — свой """
     def __init__(self, user, log_file):
         self.user = user
         self.log_file = log_file
@@ -36,7 +36,7 @@ class Logger(object):
 
         if self.log_file:
             with open(self.log_file, "a") as target:
-                target.write(message)
+                target.write(message + '\n')
 
         else:
             print(message)
