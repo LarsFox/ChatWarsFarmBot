@@ -307,7 +307,7 @@ class ChatWarsFarmBot(object):
     def send_locations(self):
         """ Отправляется во все локации """
         cave = False
-        for name, location in self.locations.items():
+        for location in self.locations:
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() - location.after < 0:
                 continue
@@ -332,13 +332,13 @@ class ChatWarsFarmBot(object):
                 continue
 
             # Определяем, идем ли в пещеру
-            if name == "cave":
+            if location.console == "поход в пещеру":
                 if self.level > ENTER_CAVE:
                     if random.random() < 0.5:
                         cave = True
 
             # ... и если идем в пещеру, то не идем в лес
-            if name == "woods" and cave:
+            if location.console == "поход в лес" and cave:
                 continue
 
             # Если устали, откладываем отправку всех команд

@@ -57,12 +57,12 @@ RANDOM_COMMANDS = [
     # "/trades"
 ]
 
-LOCATIONS = {
-    'hero': Location("запрос героя", "🏅Герой", True),
-    'castle': Location("визит в замок", "🏰Замок", True),
-    'cave': Location("поход в пещеру", "🕸Пещера", False),
-    'woods': Location("поход в лес", "🌲Лес", False),
-    'commands': Random("случайную команду", RANDOM_COMMANDS, True),
+LOCATIONS = [
+    Location("запрос героя", "🏅Герой", True),
+    Location("визит в замок", "🏰Замок", True),
+    Location("поход в пещеру", "🕸Пещера", False),
+    Location("поход в лес", "🌲Лес", False),
+    Random("случайную команду", RANDOM_COMMANDS, True),
     # 'arena': Location("поход на арену", "(!)", False),
     # 'build': Location("поход на стройку", "/build_(!)", False),
-}
+]
