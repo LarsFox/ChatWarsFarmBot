@@ -34,6 +34,7 @@ class Location(object):
             return False
         return True
 
+    @property
     def emoji(self):
         """ Возвращает команду, по которой осуществляется поход в локацию """
         return self.command
