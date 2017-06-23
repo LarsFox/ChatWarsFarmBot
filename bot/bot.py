@@ -11,9 +11,8 @@ import sys
 
 
 from bot.client import TelethonClient
-from bot.data import CHATS, WAR, \
+from bot.data import CHATS, WAR, COOLDOWN, \
                      ATTACK, DEFEND, HERO, \
-                     COOLDOWN, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
 from bot.helpers import Logger, get_fight_command
@@ -24,6 +23,9 @@ from sessions import ENTER_CAVE, SUPERGROUP_ID
 
 class ChatWarsFarmBot(object):
     """ Бот для каждой сессии """
+
+    # pylint: disable=too-many-instance-attributes
+
     def __init__(self, user, data, silent=True):
         # Подключаемся к Телеграму
         self.client = TelethonClient(user, data['phone'])
@@ -50,8 +52,16 @@ class ChatWarsFarmBot(object):
 
         self.logger = Logger(user, log_file)
 
-        # Собираем данные
-        self.data = data
+        # Устанавливаем важные параметры
+        self.exhaust = time.time()  # время отдышаться
+        self.order = None           # последний приказ в Супергруппе
+        self.sent_defend = False    # отправляем 1 раз до и после боя
+
+        self.equipment = data['equip']  # обмундирование
+        self.flag = WAR[data['flag']]   # флаг в виде смайлика
+        self.level = data['level']      # уровень героя
+
+        # Создаем локации
         self.locations = LOCATIONS
 
         # Добавляем модуль с запросами
@@ -59,7 +69,7 @@ class ChatWarsFarmBot(object):
             self.client,
             self.logger,
             self.chats,
-            self.data['level']
+            self.level
         )
 
         # Делаем первый запрос бота
@@ -69,11 +79,16 @@ class ChatWarsFarmBot(object):
         if os.name == 'nt':
             os.system("title " + user + " as ChatWarsFarmBot")
 
-        # Устанавливаем важные параметры
-        self.data['exhaust'] = time.time()  # время отдышаться
-        self.data['order'] = None           # последний приказ в Супергруппе
-        self.data['sent_defend'] = False    # отправляем 1 раз до и после боя
-        self.data['flag'] = WAR[self.data['flag']]  # флаг в виде смайлика
+        if data['girl']:
+            space = 'а '
+        else:
+            space = ' '
+
+        self.verbs = {
+            ATTACK: "Атаковал" + space,
+            DEFEND: "Защищал" + space,
+            "notice": "Не увидел" + space
+        }
 
         # Поехали!
         self.logger.log("Сеанс {} открыт".format(user))
@@ -102,7 +117,7 @@ class ChatWarsFarmBot(object):
                 # На 59-й идем в атаку
                 if now.minute >= 59 and now.second >= 25:
                     self.attack()
-                    self.logger.sleep(45, "~Минутку посплю после приказа", False)
+                    self.logger.sleep(45, "~Минутка сна после приказа", False)
 
                 # На 58-й уменьшаем время ожидания
                 elif now.minute >= 58:
@@ -124,9 +139,9 @@ class ChatWarsFarmBot(object):
 
             # В остальное время отправляем команды
             else:
-                if time.time() > self.data['exhaust']:
+                if time.time() > self.exhaust:
                     self.send_locations()
-                    self.logger.sleep(105, "~А теперь посплю пару минут", False)
+                    self.logger.sleep(105, "~Теперь посплю пару минут", False)
 
                 else:
                     self.logger.sleep(105, "~Сил нет, сплю две минуты", False)
@@ -171,7 +186,7 @@ class ChatWarsFarmBot(object):
 
         self.logger.log("Капча!")
         self.client.send_text(self.chats["captcha_bot"], self.message)
-        self.logger.sleep(10, "Десять секунд, на всякий случай жду Капчеватора")
+        self.logger.sleep(10, "Десять секунд, жду Капчеватора")
 
         _, captcha_answer = self.client.get_message(self.chats["captcha_bot"])
 
@@ -191,36 +206,24 @@ class ChatWarsFarmBot(object):
 
     # Конец
 
-    # Сокращения
-
-    @property
-    def space(self):
-        """ Окончание женского рода или простой пробел """
-        if self.data['girl']:
-            return "а "
-        return " "
-
-    # Конец
-
     # Бой
 
     def attack(self):
         """
-        Считывает приказ из Супергруппы
-        Считывает его
-        Надевает атакующую одежду
+        Считывает приказ из Супергруппы.
+        Затем надевает атакующую одежду и отправляется в атаку
         """
 
-        self.data['order'] = self.updater.order
+        self.order = self.updater.order
 
-        if self.data['order'] and self.data['order'] != self.data['flag']:
+        if self.order and self.order != self.flag:
             self.hero()
             self.logger.log("Иду в атаку")
 
             self.update(ATTACK)
 
             self.logger.log("Отправляю приказ из файла")
-            self.update(self.data['order'])
+            self.update(self.order)
 
             self.equip("attack")
 
@@ -230,27 +233,25 @@ class ChatWarsFarmBot(object):
         """ Отправляет приказ к защите """
         self.hero()
 
-        if not self.data['sent_defend']:
+        if not self.sent_defend:
             if "Отдых" in self.message:
                 self.logger.log("Становлюсь в защиту")
                 self.update(DEFEND)
 
                 if "будем держать оборону" in self.message:
-                    self.update(self.data['flag'])
+                    self.update(self.flag)
 
-                self.data['sent_defend'] = True
+                self.sent_defend = True
 
         return True
 
     def wind(self):
         """
-        Спит после боя
-        Отправляет /report боту игры
-        Если бот проснулся, надевает защитную одежду
-        Отписывается о выполнении приказа в Супергруппу
-        Забывает приказ
+        Спит после боя, и запрашивает отчет о битве.
+        Если бот проснулся, надевает защитную одежду.
+        Отписывается о выполнении приказа в Супергруппу и забывает приказ
         """
-        if not self.data['sent_defend']:
+        if not self.sent_defend:
             return False
 
         self.update("/report")
@@ -258,30 +259,30 @@ class ChatWarsFarmBot(object):
         if "завывает" in self.message:
             return False
 
-        if self.data['order'] is not None:
-            if self.data['order'] != self.data['flag']:
-                self.updater.send_group("Атаковал" + self.space + self.data['order'])
+        if self.order is not None:
+            if self.order != self.flag:
+                self.updater.send_group(self.verbs[ATTACK] + self.order)
                 self.equip("defend")
 
             else:
-                self.updater.send_group("Защищал" + self.space + self.data['order'])
+                self.updater.send_group(self.verbs[DEFEND] + self.order)
 
-            self.data['order'] = None
+            self.order = None
             self.logger.log("Приказ устарел, забываю его")
 
         else:
-            self.updater.send_group("Не увидел" + self.space + "приказ :(")
+            self.updater.send_group(self.verbs["notice"] + "приказ :(")
 
-        self.data['sent_defend'] = False
+        self.sent_defend = False
 
-        if self.data['level'] > 15:
+        if self.level > 15:
             self.updater.send_penguin()
 
         return True
 
     def equip(self, state):
         """ Надевает указанные предметы """
-        for hand in self.data["equip"].values():
+        for hand in self.equipment.values():
             if len(hand) == 2:
                 item = EQUIP_ITEM.format(hand[state])
                 self.logger.log("Надеваю: {}".format(item))
@@ -317,13 +318,13 @@ class ChatWarsFarmBot(object):
                 location.postpone()
             ))
 
-            # Команда не требует времени на выполнение, идем дальше
+            # Команда не требует затрат времени, выполняем следующую
             if location.instant:
                 continue
 
             # Определяем, идем ли в пещеру
             if name == "cave":
-                if self.data['level'] < ENTER_CAVE:
+                if self.level > ENTER_CAVE:
                     if random.random() < 0.5:
                         cave = True
 
@@ -331,12 +332,12 @@ class ChatWarsFarmBot(object):
             if name == "woods" and cave:
                 continue
 
-            # Если устали, откладываем отправку всех команд на пару часов
+            # Если устали, откладываем отправку всех команд
             if "мало единиц выносливости" in self.message:
                 self.logger.log("~Выдохся, поживу без приключений пару часов")
 
                 exhaust = time.time() + COOLDOWN + random.random() * 3600
-                self.data['exhaust'] = exhaust
+                self.exhaust = exhaust
                 return False
 
             # Если уже в пути, прерываем отправку команд
@@ -346,18 +347,17 @@ class ChatWarsFarmBot(object):
 
             self.logger.sleep(310, "Вернусь через 5 минут")
 
+            # По возвращении деремся с монстром, если он есть
             self.fight()
 
+            # И ради интереса запрашиваем свой профиль
             if random.random() < 0.4:
                 self.hero()
 
         return True
 
     def hero(self):
-        """
-        Запрашивает профиль героя
-        И прокачивает уровень, если может
-        """
+        """ Запрашивает профиль героя и увеличивает уровень """
         self.update(HERO)
 
         if LEVEL_UP in self.message:
@@ -372,10 +372,8 @@ class ChatWarsFarmBot(object):
 
         return True
 
-    # Конец
-
     def caravan(self):
-        """ Перехват КОРОВАНА """
+        """ Перехватывает КОРОВАН """
         if CARAVAN in self.message:
             self.logger.log("Защищаю караван")
             self.update(CARAVAN)
@@ -384,7 +382,7 @@ class ChatWarsFarmBot(object):
         return True
 
     def help_other(self):
-        """ Помощь друзьям и Супергруппы """
+        """ Помогает друзьям из Супергруппы """
         command = get_fight_command(self.updater.group_message)
 
         if command:
@@ -395,12 +393,12 @@ class ChatWarsFarmBot(object):
         return True
 
     def fight(self):
-        """ Отправка команды сражения с монстром """
+        """ Отправляет команды сражения с монстром """
         self.update()
         command = get_fight_command(self.message)
 
         if command:
-            self.logger.sleep(5, "А вот и монстр! Сплю пять секунд перед дракой")
+            self.logger.sleep(5, "Монстр! Сплю пять секунд перед дракой")
             self.client.send_text(self.chats["group"], command)
             self.update(command)
 
