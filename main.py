@@ -108,7 +108,7 @@ class Main(object):
 
             # Перезагружаем и откладываем все действия
             if self.reboots[user]:
-                for location in bot.locations.values():
+                for location in bot.locations:
                     location.postpone()
 
                 bot.client.send_text(bot.chats["group"], "Перепросыпаюсь")
