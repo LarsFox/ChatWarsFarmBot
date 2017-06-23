@@ -54,7 +54,7 @@ class Logger(object):
                 self.log(message)
 
         else:
-            self.log("Сон в секундах: " + duration)
+            self.log("Сон в секундах: {}".format(duration))
 
         time.sleep(duration)
 
