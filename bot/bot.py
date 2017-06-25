@@ -18,7 +18,7 @@ from bot.data import CHATS, WAR, COOLDOWN, \
 from bot.helpers import Logger, get_fight_command
 from bot.updater import Updater
 from modules.locations import LOCATIONS
-from sessions import ENTER_CAVE, SUPERGROUP_ID
+from sessions import CAVE_LEVEL, SUPERGROUP_ID
 
 
 class ChatWarsFarmBot(object):
@@ -333,9 +333,11 @@ class ChatWarsFarmBot(object):
 
             # Определяем, идем ли в пещеру
             if location.console == "поход в пещеру":
-                if self.level > ENTER_CAVE:
-                    if random.random() < 0.5:
+                if self.level > CAVE_LEVEL:
+                    if random.random() < CAVE_CHANCE:  # идем
                         cave = True
+                    else:                              # не идем
+                        continue
 
             # ... и если идем в пещеру, то не идем в лес
             if location.console == "поход в лес" and cave:
