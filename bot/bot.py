@@ -12,7 +12,7 @@ import sys
 
 from bot.client import TelethonClient
 from bot.data import CHATS, WAR, COOLDOWN, \
-                     ATTACK, DEFEND, HERO, \
+                     ATTACK, DEFEND, VERBS, REGROUP, HERO, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
 from bot.helpers import Logger, get_fight_command
@@ -55,9 +55,11 @@ class ChatWarsFarmBot(object):
         # Устанавливаем важные параметры
         self.exhaust = time.time()  # время отдышаться
         self.order = None           # последний приказ в Супергруппе
-        self.sent_defend = False    # отправляем 1 раз до и после боя
+        self.status = None          # статус бота перед боем
+        self.sent_attack = False    # отправляем 1 раз до и после боя
 
         self.equipment = data['equip']  # обмундирование
+        self.girl = data['girl']
         self.flag = WAR[data['flag']]   # флаг в виде смайлика
         self.level = data['level']      # уровень героя
 
@@ -78,17 +80,6 @@ class ChatWarsFarmBot(object):
         # Если запускаем в Виндоуз, переименовываем окно
         if os.name == 'nt':
             os.system("title " + user + " as ChatWarsFarmBot")
-
-        if data['girl']:
-            space = 'а '
-        else:
-            space = ' '
-
-        self.verbs = {
-            ATTACK: "Атаковал" + space,
-            DEFEND: "Защищал" + space,
-            "notice": "Не увидел" + space
-        }
 
         # Поехали!
         self.logger.log("Сеанс {} открыт".format(user))
@@ -111,21 +102,34 @@ class ChatWarsFarmBot(object):
             # Есть вероятность, что никто не поможет
             self.help_other()
 
-            # (!) переписать для ранних приказов
             # С 47-й минуты ничего не делаем
             if (now.hour) % 4 == 0 and now.minute >= 47:
-                # На 59-й идем в атаку
-                if now.minute >= 59 and now.second >= 25:
+                self.order = self.updater.order
+                self.status = self.updater.status
+
+                # Если стоим в защите, пробуем идти в атаку на основе приказа
+                if self.status == DEFEND:
                     self.attack()
-                    self.logger.sleep(45, "~Минутка сна после приказа", False)
 
-                # На 58-й уменьшаем время ожидания
-                elif now.minute >= 58:
-                    self.logger.sleep(5, "Подбираюсь к отправке приказа")
-
-                # С 54-й спим по минуте и заранее становимся в защиту
-                elif now.minute >= 54:
+                # Если отдыхаем, идем в защиту
+                elif self.status is None:
                     self.defend()
+   
+                # Если получили приказ отступать, становимся в защиту
+                if self.order == REGROUP:
+                    self.defend()
+                    self.equip("defend")
+
+                # C 59-й обновляем приказ очень часто
+                if now.minute >= 59 and now.second >= 15:
+                    self.logger.sleep(5, "Дремлю, пока битва близко")
+
+                # C 58-й чаще обновляем приказ
+                elif now.minute >= 58:
+                    self.logger.sleep(15, "Дремлю, пока битва близко")
+
+                # С 54-й спим по минуте
+                elif now.minute >= 54:
                     self.logger.sleep(60, "Сплю, пока битва близко")
 
                 # С 47-й спим по две минуты
@@ -209,22 +213,12 @@ class ChatWarsFarmBot(object):
     # Бой
 
     def attack(self):
-        """
-        Считывает приказ из Супергруппы.
-        Затем надевает атакующую одежду и отправляется в атаку
-        """
-
-        self.order = self.updater.order
-
+        """ Надевает атакующую одежду и отправляется в атаку """
         if self.order and self.order != self.flag:
             self.hero()
             self.logger.log("Иду в атаку")
-
             self.update(ATTACK)
-
-            self.logger.log("Отправляю приказ из файла")
             self.update(self.order)
-
             self.equip("attack")
 
         return True
@@ -232,60 +226,47 @@ class ChatWarsFarmBot(object):
     def defend(self):
         """ Отправляет приказ к защите """
         self.hero()
+        self.logger.log("Становлюсь в защиту")
+        self.update(DEFEND)
 
-        if not self.sent_defend:
-            if "Отдых" in self.message:
-                self.logger.log("Становлюсь в защиту")
-                self.update(DEFEND)
-
-                if "будем держать оборону" in self.message:
-                    self.update(self.flag)
-
-                self.sent_defend = True
+        if "будем держать оборону" in self.message:
+            self.update(self.flag)
 
         return True
 
     def wind(self):
         """
         Спит после боя, и запрашивает отчет о битве.
-        Если бот проснулся, надевает защитную одежду.
-        Отписывается о выполнении приказа в Супергруппу и забывает приказ
+        Если бот проснулся, надевает защитную одежду и забывает приказ
         """
         # Отчет уже спрашивали, пропускаем
-        if not self.sent_defend:
+        if not self.status:
             return False
 
         # Спрашиваем отчет
         self.update("/report")
 
-        # Бот еще не проснулся, ждем
+        # Бот игры еще не проснулся, пропускаем
         if "завывает" in self.message:
             return False
+
+        # Оповещаем Супергруппу о полученном приказе
+        self.updater.send_group(VERBS[self.status] + self.order)
 
         # Если был потерян предмет, оповещаем Супергруппу о беде
         if "Вы потеряли" in self.message:
             self.updater.send_group(self.message)
 
-        # Отчитываемся о приказе
-        if self.order is not None:
-            if self.order != self.flag:
-                self.updater.send_group(self.verbs[ATTACK] + self.order)
-                self.equip("defend")
+        # Надеваем защитную одежду для лучшего сбора, если шли в атаку
+        if self.status == ATTACK:
+            self.equip('defend')
 
-            else:
-                self.updater.send_group(self.verbs[DEFEND] + self.order)
+        # Обновляем информацию у Пингвина
+        self.updater.send_penguin()
 
-            self.order = None
-            self.logger.log("Приказ устарел, забываю его")
-
-        else:
-            self.updater.send_group(self.verbs["notice"] + "приказ :(")
-
-        self.sent_defend = False
-
-        # С 15-го уровня работает обмен, узнаем информацию
-        if self.level > 15:
-            self.updater.send_penguin()
+        # Забываем боевой статус и приказ
+        self.order = None
+        self.status = None
 
         return True
 
