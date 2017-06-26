@@ -2,7 +2,8 @@
 """
 Модуль для конкретных и часто используемых обращений к клиенту
 """
-from bot.data import WAR, WAR_COMMANDS, REGROUP, STATUSES
+
+from bot.data import WAR, WAR_COMMANDS, REGROUP
 
 
 class Updater(object):

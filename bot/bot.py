@@ -18,7 +18,7 @@ from bot.data import CHATS, WAR, COOLDOWN, \
 from bot.helpers import Logger, get_fight_command
 from bot.updater import Updater
 from modules.locations import LOCATIONS
-from sessions import CAVE_LEVEL, SUPERGROUP_ID
+from sessions import CAVE_LEVEL, CAVE_CHANCE, SUPERGROUP_ID
 
 
 class ChatWarsFarmBot(object):
@@ -55,8 +55,7 @@ class ChatWarsFarmBot(object):
         # Устанавливаем важные параметры
         self.exhaust = time.time()  # время отдышаться
         self.order = None           # последний приказ в Супергруппе
-        self.status = None          # статус бота перед боем
-        self.sent_attack = False    # отправляем 1 раз до и после боя
+        self.status = None          # статус бота до и после битвы
 
         self.equipment = data['equip']  # обмундирование
         self.girl = data['girl']
@@ -113,11 +112,11 @@ class ChatWarsFarmBot(object):
                 # Если отдыхаем, идем в защиту
                 elif self.status is None:
                     self.defend()
-   
+
                 # Если получили приказ отступать, становимся в защиту
                 if self.order == REGROUP:
                     self.defend()
-                    self.equip("defend")
+                    self.equip(DEFEND)
 
                 # C 59-й обновляем приказ очень часто
                 if now.minute >= 59 and now.second >= 15:
@@ -218,8 +217,8 @@ class ChatWarsFarmBot(object):
             self.logger.log("Иду в атаку")
             self.update(ATTACK)
             self.update(self.order)
-            self.equip("attack")
-            self.status = "attack"
+            self.equip(ATTACK)
+            self.status = ATTACK
 
         return True
 
@@ -232,7 +231,7 @@ class ChatWarsFarmBot(object):
         if "будем держать оборону" in self.message:
             self.update(self.flag)
 
-        self.status = "defend"
+        self.status = DEFEND
 
         return True
 
@@ -261,7 +260,7 @@ class ChatWarsFarmBot(object):
 
         # Надеваем защитную одежду для лучшего сбора, если шли в атаку
         if self.status == ATTACK:
-            self.equip('defend')
+            self.equip(DEFEND)
 
         # Обновляем информацию у Пингвина
         self.updater.send_penguin()
@@ -274,6 +273,7 @@ class ChatWarsFarmBot(object):
 
     def equip(self, state):
         """ Надевает указанные предметы """
+
         for hand in self.equipment.values():
             if len(hand) == 2:
                 item = EQUIP_ITEM.format(hand[state])

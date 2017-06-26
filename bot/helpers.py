@@ -7,7 +7,6 @@ import datetime
 import random
 import time
 
-
 from bot.data import FIGHT
 
 
