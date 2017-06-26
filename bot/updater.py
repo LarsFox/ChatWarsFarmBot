@@ -31,15 +31,6 @@ class Updater(object):
         if message == REGROUP:
             return message
         return WAR.get(WAR_COMMANDS.get(message))
-    
-    @property
-    def status(self):
-        """ Извлекает текущее состояние бота """
-        message = self.bot_message
-        for status, string in STATUSES.items():
-            if string in message:
-                return status
-        return None
 
     def send_group(self, message):
         """ Отправляет сообщение Супергруппе """

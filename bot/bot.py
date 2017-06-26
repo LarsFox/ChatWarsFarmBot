@@ -105,7 +105,6 @@ class ChatWarsFarmBot(object):
             # С 47-й минуты ничего не делаем
             if (now.hour) % 4 == 0 and now.minute >= 47:
                 self.order = self.updater.order
-                self.status = self.updater.status
 
                 # Если стоим в защите, пробуем идти в атаку на основе приказа
                 if self.status == DEFEND:
@@ -220,6 +219,7 @@ class ChatWarsFarmBot(object):
             self.update(ATTACK)
             self.update(self.order)
             self.equip("attack")
+            self.status = "attack"
 
         return True
 
@@ -231,6 +231,8 @@ class ChatWarsFarmBot(object):
 
         if "будем держать оборону" in self.message:
             self.update(self.flag)
+
+        self.status = "defend"
 
         return True
 
