@@ -42,7 +42,7 @@ ATTACK = "⚔ Атака"
 REGROUP = "!!"  # забываем приказ
 VERBS = {
     True: {},
-    False: {"attack": "Атаковал", "defend": "Защищал", None: "Не заметил"}
+    False: {ATTACK: "Атаковал", DEFEND: "Защищал", None: "Не заметил"}
 }
 
 for verb, string in VERBS[False].items():
