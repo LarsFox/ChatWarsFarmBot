@@ -314,11 +314,10 @@ class ChatWarsFarmBot(object):
 
             # Определяем, идем ли в пещеру
             if location.console == "поход в пещеру":
-                if self.level > CAVE_LEVEL:
-                    if random.random() < CAVE_CHANCE:  # идем
-                        cave = True
-                    else:                              # не идем
-                        continue
+                if self.level < CAVE_LEVEL or random.random() > CAVE_CHANCE:
+                    continue
+
+                cave = True
 
             # ... и если идем в пещеру, то не идем в лес
             if location.console == "поход в лес" and cave:
