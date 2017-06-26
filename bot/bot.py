@@ -252,7 +252,7 @@ class ChatWarsFarmBot(object):
             return False
 
         # Оповещаем Супергруппу о полученном приказе
-        self.updater.send_group(VERBS[self.status] + self.order)
+        self.updater.send_group(VERBS[self.girl][self.status] + self.order)
 
         # Если был потерян предмет, оповещаем Супергруппу о беде
         if "Вы потеряли" in self.message:
