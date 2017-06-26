@@ -300,20 +300,6 @@ class ChatWarsFarmBot(object):
                 self.logger.sleep(10, "Пропускаю " + location.console)
                 continue
 
-            # Идем в локацию
-            self.logger.log("Отправляю " + location.console)
-            self.update(location.emoji)
-
-            # Откладываем следующий поход
-            self.logger.log("Следующий {} через {:.3f} минут".format(
-                location.console,
-                location.postpone()
-            ))
-
-            # Команда не требует затрат времени, выполняем следующую
-            if location.instant:
-                continue
-
             # Определяем, идем ли в пещеру
             if location.console == "поход в пещеру":
                 if self.level < CAVE_LEVEL or random.random() > CAVE_CHANCE:
@@ -323,6 +309,20 @@ class ChatWarsFarmBot(object):
 
             # ... и если идем в пещеру, то не идем в лес
             if location.console == "поход в лес" and cave:
+                continue
+
+            # Отправляем сообщение с локацией
+            self.logger.log("Отправляю " + location.console)
+            self.update(location.emoji)
+
+            # Откладываем следующий поход
+            self.logger.log("Следующий {} через {:.3f} минут".format(
+                location.console,
+                location.postpone()
+            ))
+
+            # Локация не требует затрат времени, пропускаем задержку
+            if location.instant:
                 continue
 
             # Если устали, откладываем отправку всех команд
