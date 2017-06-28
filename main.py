@@ -112,6 +112,8 @@ class Main(object):
                 for location in bot.locations:
                     location.postpone()
 
+                time.sleep(random.random()*60)
+
                 bot.updater.send_group(bot.flag + "Перепросыпается" + level)
 
             else:
