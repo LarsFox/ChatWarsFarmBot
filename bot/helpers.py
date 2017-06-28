@@ -8,15 +8,19 @@ import random
 import re
 import time
 
-from bot.data import FIGHT
+from bot.data import WAR, GENITIVES, FIGHT
 
 
 def get_level(message):
     """ Извлекает уровень из профиля героя /hero """
     found = re.findall("Уровень: (.*?)\n", message)
-    if found:
-        return int(found[0])
-    return 0
+    return int(found[0])
+
+
+def get_flag(message):
+    """ Извлекает флаг замка из профиля /hero """
+    found = re.findall(".* замка", message)[0].split()
+    return WAR[GENITIVES.get(found[-2])]
 
 
 def get_fight_command(message):

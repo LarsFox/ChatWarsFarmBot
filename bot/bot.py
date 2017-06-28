@@ -11,11 +11,11 @@ import sys
 
 
 from bot.client import TelethonClient
-from bot.data import CHATS, WAR, COOLDOWN, \
-                     ATTACK, DEFEND, ALLY, VERBS, REGROUP, HERO, \
+from bot.data import CHATS, COOLDOWN, HERO, \
+                     ATTACK, DEFEND, ALLY, VERBS, REGROUP, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
-from bot.helpers import Logger, get_fight_command, get_level
+from bot.helpers import Logger, get_fight_command, get_level, get_flag
 from bot.updater import Updater
 from modules.locations import LOCATIONS
 from sessions import CAVE_LEVEL, CAVE_CHANCE, SUPERGROUP_ID
@@ -56,6 +56,8 @@ class ChatWarsFarmBot(object):
         self.exhaust = time.time()  # время до следующей передышки
         self.order = None           # приказ на основе полученного из Супергруппы
         self.status = None          # статус бота до и после битвы
+        self.mid = None             # номер последнего сообщения
+        self.message = None         # содержание последнего сообщения
 
         # Создаем локации
         self.locations = LOCATIONS
@@ -71,11 +73,8 @@ class ChatWarsFarmBot(object):
         self.girl = data['girl']
 
         self.hero()
-        self.flag = WAR[data['flag']]         # (!) флаг в виде смайлика
+        self.flag = get_flag(self.message)    # флаг в виде смайлика
         self.level = get_level(self.message)  # уровень героя
-
-        # Делаем первый запрос бота
-        self.mid, self.message = self.updater.bot_message
 
         # Если запускаем в Виндоуз, переименовываем окно
         if os.name == 'nt':

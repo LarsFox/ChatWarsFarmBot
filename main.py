@@ -107,14 +107,15 @@ class Main(object):
                 bot.logger.sleep(random.random()*30, "Я люблю спать", False)
 
             # Перезагружаем и откладываем все действия
+            level = " фармитель {}-го уровня!".format(bot.level)
             if self.reboots[user]:
                 for location in bot.locations:
                     location.postpone()
 
-                bot.client.send_text(bot.chats["group"], "Перепросыпаюсь")
+                bot.updater.send_group(bot.flag + "Перепросыпается" + level)
 
             else:
-                bot.client.send_text(bot.chats["group"], "Просыпаюсь")
+                bot.updater.send_group(bot.flag + "Просыпается" + level)
 
             # Поехали
             try:
