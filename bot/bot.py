@@ -72,7 +72,7 @@ class ChatWarsFarmBot(object):
         self.equipment = data['equip']  # обмундирование
         self.girl = data['girl']
 
-        self.hero()
+        self.update("/hero")
         self.flag = get_flag(self.message)    # флаг в виде смайлика
         self.level = get_level(self.message)  # уровень героя
 
@@ -381,6 +381,8 @@ class ChatWarsFarmBot(object):
             if "какую характеристику ты" in self.message:
                 self.update(PLUS_ONE)
                 self.level += 1
+                self.updater.send_group(
+                    "Новый уровень: `{}`!".format(self.level))
 
             else:
                 self.logger.log("Странно, где же выбор?")
