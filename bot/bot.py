@@ -12,7 +12,7 @@ import sys
 
 from bot.client import TelethonClient
 from bot.data import CHATS, WAR, COOLDOWN, \
-                     ATTACK, DEFEND, VERBS, REGROUP, HERO, \
+                     ATTACK, DEFEND, ALLY, VERBS, REGROUP, HERO, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
 from bot.helpers import Logger, get_fight_command, get_level
@@ -53,11 +53,9 @@ class ChatWarsFarmBot(object):
         self.logger = Logger(user, log_file)
 
         # Устанавливаем важные параметры
-        self.exhaust = time.time()  # время отдышаться
-        self.order = None           # последний приказ в Супергруппе
+        self.exhaust = time.time()  # время до следующей передышки
+        self.order = None           # приказ на основе полученного из Супергруппы
         self.status = None          # статус бота до и после битвы
-
-
 
         # Создаем локации
         self.locations = LOCATIONS
@@ -87,71 +85,6 @@ class ChatWarsFarmBot(object):
         self.logger.log("Сеанс {} открыт".format(user))
 
     # Системные функции
-
-    def start(self):
-        """ Запускает бота """
-        while True:
-            # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
-            now = datetime.datetime.utcnow()
-
-            # Собираем сообщение
-            self.mid, self.message = self.updater.bot_message
-
-            # Защищаем КОРОВАНЫ
-            self.caravan()
-
-            # Смотрим, кому можем помочь
-            # Есть вероятность, что никто не поможет
-            self.help_other()
-
-            # С 47-й минуты ничего не делаем
-            if (now.hour) % 4 == 0 and now.minute >= 47:
-                self.order = self.updater.order
-
-                # Если стоим в защите, пробуем идти в атаку на основе приказа
-                if self.status == DEFEND:
-                    self.attack()
-
-                # Если отдыхаем, идем в защиту
-                elif self.status is None:
-                    self.defend()
-
-                # Если получили приказ отступать, становимся в защиту
-                if self.order == REGROUP:
-                    self.defend()
-                    self.equip(DEFEND)
-
-                # C 59-й обновляем приказ очень часто
-                if now.minute >= 59 and now.second >= 15:
-                    self.logger.sleep(5, "Дремлю, пока битва близко")
-
-                # C 58-й чаще обновляем приказ
-                elif now.minute >= 58:
-                    self.logger.sleep(15, "Дремлю, пока битва близко")
-
-                # С 54-й спим по минуте
-                elif now.minute >= 54:
-                    self.logger.sleep(60, "Сплю, пока битва близко")
-
-                # С 47-й спим по две минуты
-                else:
-                    self.logger.sleep(120, "Время перед битвой, сижу тихо")
-
-            # До 15-й минуты ничего не делаем, ждем отчет
-            elif (now.hour-1) % 4 == 0 and now.minute < 15:
-                self.logger.sleep(180, "Жду, пока завывает ветер")
-                self.wind()
-
-            # В остальное время отправляем команды
-            else:
-                if time.time() > self.exhaust:
-                    self.send_locations()
-                    self.logger.sleep(105, "~Теперь посплю пару минут", False)
-
-                else:
-                    self.logger.sleep(105, "~Сил нет, сплю две минуты", False)
-
-        return True
 
     def update(self, message=None, sleep=5):
         """
@@ -209,26 +142,103 @@ class ChatWarsFarmBot(object):
         self.client.send_text(self.chats["group"], self.message)
         sys.exit()  # (!) проверить, выключаются ли все боты или один
 
+    def start(self):
+        """ Запускает бота """
+        while True:
+            # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
+            now = datetime.datetime.utcnow()
+
+            # Собираем сообщение
+            self.mid, self.message = self.updater.bot_message
+
+            # Защищаем КОРОВАНЫ
+            self.caravan()
+
+            # Смотрим, кому можем помочь
+            # Есть вероятность, что никто не поможет
+            self.help_other()
+
+            # С 47-й минуты готовимся к бою
+            if (now.hour) % 4 == 0 and now.minute >= 47:
+                self.battle()
+
+                # C 59-й обновляем приказ очень часто
+                if now.minute >= 59 and now.second >= 15:
+                    self.logger.sleep(5, "Дремлю, пока битва близко")
+
+                # C 58-й чаще обновляем приказ
+                elif now.minute >= 58:
+                    self.logger.sleep(15, "Дремлю, пока битва близко")
+
+                # С 54-й спим по минуте
+                elif now.minute >= 54:
+                    self.logger.sleep(60, "Сплю, пока битва близко")
+
+                # С 47-й спим по две минуты
+                else:
+                    self.logger.sleep(120, "Время перед битвой, сижу тихо")
+
+            # До 15-й минуты ничего не делаем, ждем отчет
+            elif (now.hour-1) % 4 == 0 and now.minute < 15:
+                self.logger.sleep(180, "Жду, пока завывает ветер")
+                self.wind()
+
+            # В остальное время отправляем команды
+            else:
+                if time.time() > self.exhaust:
+                    self.send_locations()
+                    self.logger.sleep(105, "~Теперь посплю пару минут", False)
+
+                else:
+                    self.logger.sleep(105, "~Сил нет, сплю две минуты", False)
+
+        return True
+
     # Конец
 
     # Бой
 
-    def attack(self):
+    def battle(self):
+        """ Готовится к битве в зависимости от приказа """
+        # Приказы игнорируются при защите союзника или атаке
+        order = self.updater.order
+
+        # Если получили приказ отступать, становимся в защиту
+        if order == REGROUP:
+            self.defend()
+
+            if self.status == ATTACK:
+                self.equip(DEFEND)
+
+        # Если отдыхаем, идем в защиту
+        elif self.status is None:
+            self.defend()
+
+        # Если стоим в защите, пробуем идти в атаку на основе приказа
+        elif self.status == DEFEND:
+            self.attack(order)
+
+        return True
+
+    def attack(self, order):
         """ Надевает атакующую одежду и отправляется в атаку """
-        if self.order and self.order != self.flag:
+        if order and order != self.flag:
             self.hero()
             self.logger.log("Иду в атаку")
             self.update(ATTACK)
-            self.update(self.order)
+            self.update(order)
 
             # Нападение на союзника! Сидим дома
             if "защите" in self.message:
+                self.logger.log("Не могу атаковать союзника")
                 self.defend()
-                self.order = self.flag
+                self.status = ALLY  # не защита, но и атаковать не надо
 
+            # Атака! Одеваемся и выходим к бою
             else:
                 self.equip(ATTACK)
                 self.status = ATTACK
+                self.order = order
 
         return True
 
@@ -241,6 +251,7 @@ class ChatWarsFarmBot(object):
         if "будем держать оборону" in self.message:
             self.update(self.flag)
 
+        self.order = self.flag
         self.status = DEFEND
 
         return True
@@ -251,7 +262,7 @@ class ChatWarsFarmBot(object):
         Если бот проснулся, надевает защитную одежду и забывает приказ
         """
         # Отчет уже спрашивали, пропускаем
-        if not self.status:
+        if self.status is not None:
             return False
 
         # Спрашиваем отчет
