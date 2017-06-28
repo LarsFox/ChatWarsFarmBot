@@ -179,7 +179,7 @@ class ChatWarsFarmBot(object):
 
             # До 15-й минуты ничего не делаем, ждем отчет
             elif (now.hour-1) % 4 == 0 and now.minute < 15:
-                self.logger.sleep(280, "Жду, пока завывает ветер")
+                self.logger.sleep(420, "Жду, пока завывает ветер")
                 self.wind()
 
             # В остальное время отправляем команды
@@ -261,7 +261,7 @@ class ChatWarsFarmBot(object):
         Если бот проснулся, надевает защитную одежду и забывает приказ
         """
         # Отчет уже спрашивали, пропускаем
-        if self.status is not None:
+        if self.status is None:
             return False
 
         # Спрашиваем отчет
