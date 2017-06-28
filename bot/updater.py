@@ -27,7 +27,7 @@ class Updater(object):
     @property
     def order(self):
         """ Приказ на основе последнего сообщения в Супергруппе """
-        message = self.group_message
+        message = self.group_message.lower()
         if message == REGROUP:
             return message
         return WAR.get(WAR_COMMANDS.get(message))
