@@ -5,9 +5,18 @@
 
 import datetime
 import random
+import re
 import time
 
 from bot.data import FIGHT
+
+
+def get_level(message):
+    """ Извлекает уровень из профиля героя /hero """
+    found = re.findall("Уровень: (.*?)\n", message)
+    if found:
+        return int(found[0])
+    return 0
 
 
 def get_fight_command(message):

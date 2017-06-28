@@ -15,7 +15,7 @@ from bot.data import CHATS, WAR, COOLDOWN, \
                      ATTACK, DEFEND, VERBS, REGROUP, HERO, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
-from bot.helpers import Logger, get_fight_command
+from bot.helpers import Logger, get_fight_command, get_level
 from bot.updater import Updater
 from modules.locations import LOCATIONS
 from sessions import CAVE_LEVEL, CAVE_CHANCE, SUPERGROUP_ID
@@ -57,10 +57,7 @@ class ChatWarsFarmBot(object):
         self.order = None           # последний приказ в Супергруппе
         self.status = None          # статус бота до и после битвы
 
-        self.equipment = data['equip']  # обмундирование
-        self.girl = data['girl']
-        self.flag = WAR[data['flag']]   # флаг в виде смайлика
-        self.level = data['level']      # уровень героя
+
 
         # Создаем локации
         self.locations = LOCATIONS
@@ -69,9 +66,15 @@ class ChatWarsFarmBot(object):
         self.updater = Updater(
             self.client,
             self.logger,
-            self.chats,
-            self.level
+            self.chats
         )
+
+        self.equipment = data['equip']  # обмундирование
+        self.girl = data['girl']
+
+        self.hero()
+        self.flag = WAR[data['flag']]         # (!) флаг в виде смайлика
+        self.level = get_level(self.message)  # уровень героя
 
         # Делаем первый запрос бота
         self.mid, self.message = self.updater.bot_message
@@ -134,8 +137,8 @@ class ChatWarsFarmBot(object):
                 else:
                     self.logger.sleep(120, "Время перед битвой, сижу тихо")
 
-            # До 7-й минуты ничего не делаем
-            elif (now.hour-1) % 4 == 0 and now.minute < 7:
+            # До 15-й минуты ничего не делаем, ждем отчет
+            elif (now.hour-1) % 4 == 0 and now.minute < 15:
                 self.logger.sleep(180, "Жду, пока завывает ветер")
                 self.wind()
 
@@ -217,8 +220,15 @@ class ChatWarsFarmBot(object):
             self.logger.log("Иду в атаку")
             self.update(ATTACK)
             self.update(self.order)
-            self.equip(ATTACK)
-            self.status = ATTACK
+
+            # Нападение на союзника! Сидим дома
+            if "защите" in self.message:
+                self.defend()
+                self.order = self.flag
+
+            else:
+                self.equip(ATTACK)
+                self.status = ATTACK
 
         return True
 
@@ -263,7 +273,8 @@ class ChatWarsFarmBot(object):
             self.equip(DEFEND)
 
         # Обновляем информацию у Пингвина
-        self.updater.send_penguin()
+        if self.level >= 15:
+            self.updater.send_penguin()
 
         # Забываем боевой статус и приказ
         self.order = None
@@ -359,6 +370,7 @@ class ChatWarsFarmBot(object):
 
             if "какую характеристику ты" in self.message:
                 self.update(PLUS_ONE)
+                self.level += 1
 
             else:
                 self.logger.log("Странно, где же выбор?")

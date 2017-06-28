@@ -114,7 +114,6 @@ class Main(object):
                 bot.client.send_text(bot.chats["group"], "Перепросыпаюсь")
 
             else:
-                # bot.updater.send_penguin()
                 bot.client.send_text(bot.chats["group"], "Просыпаюсь")
 
             # Поехали

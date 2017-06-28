@@ -8,11 +8,10 @@ from bot.data import WAR, WAR_COMMANDS, REGROUP
 
 class Updater(object):
     """ Модуль для конкретных и часто используемых обращений к клиенту """
-    def __init__(self, client, logger, chats, level):
+    def __init__(self, client, logger, chats):
         self.client = client
         self.logger = logger
         self.chats = chats
-        self.level = level
 
     @property
     def bot_message(self):
@@ -38,10 +37,7 @@ class Updater(object):
         self.client.send_text(self.chats["group"], message)
 
     def send_penguin(self):
-        """ Отправляет инвентарь Пингвину, если уровень бота > 15 """
-        if self.level < 15:
-            return False
-
+        """ Отправляет инвентарь Пингвину """
         self.client.send_text(self.chats["trade_bot"], "/start")
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
