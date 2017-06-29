@@ -93,7 +93,11 @@ class Main(object):
         queue.join()
 
     def launch_user(self, user, params):
-        """ Действие для каждого конкретного бота """
+        """
+        Запускает конкретного бота
+        user: название бота для лог-файла и файла сессии
+        params: словарь с параметрами из sessions.py
+        """
         # Очищаем лог, если перезапускаем вручную
         if self.silent:
             with open("logs/" + user + ".log", 'w') as target:

@@ -12,7 +12,7 @@ import sys
 
 from bot.client import TelethonClient
 from bot.data import CHATS, COOLDOWN, HERO, \
-                     ATTACK, DEFEND, ALLY, VERBS, REGROUP, \
+                     ATTACK, DEFEND, ALLY, WIND, VERBS, HANDS, REGROUP, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
 from bot.helpers import Logger, get_fight_command, get_level, get_flag
@@ -85,11 +85,14 @@ class ChatWarsFarmBot(object):
 
     # Системные функции
 
-    def update(self, message=None, sleep=5):
+    def update(self, message=None, sleep=5, wind=None):
         """
-        Отправляет сообщение Боту и минуту ждет ответа
+        Отправляет сообщение Боту и 7 раз спит, ожидая новый ответ.
+        Возвращает True, если был получен новый ответ, и капча пройдена;
+        False, если новый ответ не был получен, или он — «ветер»
         message: строка, сообщение к отправке
         sleep: число секунд — пауза после отправки сообщения
+        wind: строка-сообщение для вывода в случае ветра, по умолчанию None
         """
         if message:
             self.client.send_text(self.chats["cw"], message)
@@ -103,9 +106,17 @@ class ChatWarsFarmBot(object):
 
             else:
                 self.mid, self.message = mid, message
-                break
 
-        return self.captcha()
+                # Ветер
+                if "завывает" in self.message:
+                    self.logger.log(VERBS[WIND] + wind + "! :(")
+                    return False
+
+                # Пробуем обойти капчу
+                return self.captcha()
+
+        # Новый ответ получен не был
+        return False
 
     def captcha(self):
         """ Обходит капчу и останавливает бота, если не обходит """
@@ -220,12 +231,19 @@ class ChatWarsFarmBot(object):
         return True
 
     def attack(self, order):
-        """ Надевает атакующую одежду и отправляется в атаку """
+        """
+        Надевает атакующую одежду и отправляется в атаку
+        order: смайлик флага, который отправится боту
+        """
         if order and order != self.flag:
             self.hero()
             self.logger.log("Иду в атаку")
-            self.update(ATTACK)
-            self.update(order)
+
+            if not self.update(ATTACK, wind="пойти в атаку"):
+                return False
+
+            if not self.update(order, wind="отправить приказ к атаке"):
+                return False
 
             # Нападение на союзника! Сидим дома
             if "защите" in self.message:
@@ -242,13 +260,16 @@ class ChatWarsFarmBot(object):
         return True
 
     def defend(self):
-        """ Отправляет приказ к защите """
+        """ Надевает одежду для сбора и становится в защиту """
         self.hero()
         self.logger.log("Становлюсь в защиту")
-        self.update(DEFEND)
+
+        if not self.update(DEFEND, wind="стать в защиту"):
+            return False
 
         if "будем держать оборону" in self.message:
-            self.update(self.flag)
+            if not self.update(self.flag, wind="отправить приказ к защите"):
+                return False
 
         self.order = self.flag
         self.status = DEFEND
@@ -264,11 +285,8 @@ class ChatWarsFarmBot(object):
         if self.status is None:
             return False
 
-        # Спрашиваем отчет
-        self.update("/report")
-
         # Бот игры еще не проснулся, пропускаем
-        if "завывает" in self.message:
+        if self.update("/report"):
             return False
 
         # Оповещаем Супергруппу о полученном приказе
@@ -293,13 +311,18 @@ class ChatWarsFarmBot(object):
         return True
 
     def equip(self, state):
-        """ Надевает указанные предметы """
-
-        for hand in self.equipment.values():
-            if len(hand) == 2:
-                item = EQUIP_ITEM.format(hand[state])
+        """
+        Надевает указанные предметы
+        state: ключ, с которым указаны предметы в параметре equip сессии
+        """
+        for hand, equip in self.equipment.items():
+            if len(equip) == 2:
+                item = EQUIP_ITEM.format(equip[state])
                 self.logger.log("Надеваю: {}".format(item))
-                self.update(item, sleep=3)
+
+                wind = "надеть " + HANDS[state] + hand
+                if not self.update(item, 3, wind):
+                    return False
 
         self.logger.log("Завершаю команду {}".format(state))
         return True

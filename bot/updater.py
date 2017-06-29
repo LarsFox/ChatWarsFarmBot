@@ -33,7 +33,10 @@ class Updater(object):
         return WAR.get(WAR_COMMANDS.get(message))
 
     def send_group(self, message):
-        """ Отправляет сообщение Супергруппе """
+        """
+        Отправляет сообщение Супергруппе
+        message: строка-текст сообщения с Маркдауном
+        """
         self.client.send_text(self.chats["group"], message)
 
     def send_penguin(self):

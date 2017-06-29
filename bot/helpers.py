@@ -39,7 +39,10 @@ class Logger(object):
         self.log_file = log_file
 
     def log(self, text):
-        """ Выводит в консоль или в файл """
+        """
+        Выводит сообщение в консоль или в файл
+        text: строка-сообщение для вывода
+        """
         message = '[{0:%Y-%m-%d %H:%M:%S}/{1}] {2}'.format(
             datetime.datetime.now(),
             self.user,
@@ -54,7 +57,12 @@ class Logger(object):
             print(message)
 
     def sleep(self, duration, message=None, exact=True):
-        """ Спит и выводит сообщение """
+        """
+        Спит и выводит сообщение
+        duration: целое число, длина сна в секундах
+        message: строка, собственное сообщение в лог вместо «Сон в секундах»
+        exact: добавление до 30 секунд к duration, по умолчанию False
+        """
         if not exact:
             duration += random.random() * 30
 
