@@ -286,7 +286,7 @@ class ChatWarsFarmBot(object):
             return False
 
         # Бот игры еще не проснулся, пропускаем
-        if self.update("/report"):
+        if not self.update("/report"):
             return False
 
         # Оповещаем Супергруппу о полученном приказе
