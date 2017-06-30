@@ -109,7 +109,7 @@ class ChatWarsFarmBot(object):
 
                 # Ветер
                 if "завывает" in self.message:
-                    self.logger.log(VERBS[WIND] + wind + "! :(")
+                    self.logger.log(VERBS[self.girl][WIND] + wind + "! :(")
                     return False
 
                 # Пробуем обойти капчу
