@@ -109,6 +109,9 @@ class ChatWarsFarmBot(object):
 
                 # Ветер
                 if "завывает" in self.message:
+                    if wind is None:
+                        wind = "отправку «{}»".format(message)
+
                     self.logger.log(VERBS[self.girl][WIND] + wind + "! :(")
                     return False
 
