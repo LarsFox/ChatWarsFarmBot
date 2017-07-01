@@ -72,9 +72,3 @@ class TelethonClient(telethon.TelegramClient):
             content = message.__class__.__name__
 
         return message.id, content
-
-    def send_text(self, entity, message):
-        """ Отправляет сообщение с Маркдауном и без предпросмотра
-        entity: адресат-entity
-        message: текст сообщения """
-        self.send_message(entity, message, markdown=True, no_web_page=True)
