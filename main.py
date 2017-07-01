@@ -5,7 +5,7 @@
 
 
 import multiprocessing as mp
-import random
+import random as r
 import time
 import sys
 
@@ -106,38 +106,34 @@ class Main(object):
         while True:
             bot = ChatWarsFarmBot(user, params, self.silent)
 
-            # Если выводим в консоль, начинаем без задержки
-            if self.silent:
-                bot.logger.sleep(random.random()*30, "Я люблю спать", False)
-
-            # Перезагружаем и откладываем все действия
-            level = " фармитель {}-го уровня!".format(bot.level)
-            if self.reboots[user]:
-                for location in bot.locations:
-                    location.postpone()
-
-                time.sleep(random.random()*180)
-
-                bot.updater.send_group(bot.flag + "Перепросыпается" + level)
-
-            else:
-                bot.updater.send_group(bot.flag + "Просыпается" + level)
-
-            # Поехали
             try:
+                # Если выводим в консоль, начинаем без задержки
+                if self.silent:
+                    bot.logger.sleep(r.random() * 30, "Я люблю спать", False)
+
+                # Перезагружаем и откладываем все действия
+                level = " фармитель {}-го уровня!".format(bot.level)
+                if self.reboots[user]:
+                    for location in bot.locations:
+                        location.postpone()
+
+                    time.sleep(r.random() * 180)
+
+                # Поехали
+                bot.updater.send_group(bot.flag + "Просыпается" + level)
                 bot.start()
 
             except OSError as err:
                 bot.logger.log("Ошибка: " + str(err))
-                time.sleep(60*random.random())
+                time.sleep(60*r.random())
 
             except telethon.RPCError:
                 bot.logger.log("Ошибка РПЦ, посплю немного")
-                time.sleep(60*random.random())
+                time.sleep(60*r.random())
 
             except telethon.BadMessageError:
                 bot.logger.log("Плохое сообщение, немного посплю")
-                time.sleep(120 + 60*random.random())
+                time.sleep(120 + 60*r.random())
 
             self.reboots[user] = True
 

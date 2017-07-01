@@ -14,30 +14,33 @@ from sessions import API_ID, API_HASH
 class TelethonClient(telethon.TelegramClient):
     """ Основной клиент для работы с Телеграмом """
     def __init__(self, user, phone):
-
         # Создаем файл сессии
         super().__init__("sessions/" + user, API_ID, API_HASH)
+        self.user = user
+        self.phone = phone
 
-        # ... и подключаемся к Телеграму
+    def connect_with_code(self):
+        """ Подключается к Телеграму и запрашивает код """
+        # Подключаемся к Телеграму
         self.connect()
 
         # Если ТГ просит код, вводим его и умираем
         # Если много аккаунтов, запускаем через -l
         if not self.is_user_authorized():
             print('Первый запуск. Запрашиваю код...')
-            self.send_code_request(phone)
+            self.send_code_request(self.phone)
 
             code_ok = False
             while not code_ok:
                 code = input('Введите полученный в Телеграме код: ')
-                code_ok = self.sign_in(phone, code)
+                code_ok = self.sign_in(self.phone, code)
 
             # Выходим, чтобы запросить код в следующей сессии
-            sys.exit("{} код получил, перезапускай.".format(user))
+            sys.exit("{} код получил, перезапускай.".format(self.user))
 
     def get_message(self, entity, repeat=True):
         """
-        Собираем последнее сообщение
+        Собирает последнее сообщение
         entity: адресат-entity
         repeat: повторяем сбор, пока не получим сообщение от адресата
         Возвращаем номер сообщения и его содержимое
@@ -71,5 +74,7 @@ class TelethonClient(telethon.TelegramClient):
         return message.id, content
 
     def send_text(self, entity, message):
-        """ Отправляем сообщение определенному адресату-entity """
+        """ Отправляет сообщение с Маркдауном и без предпросмотра
+        entity: адресат-entity
+        message: текст сообщения """
         self.send_message(entity, message, markdown=True, no_web_page=True)

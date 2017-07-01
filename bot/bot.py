@@ -27,22 +27,8 @@ class ChatWarsFarmBot(object):
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, user, data, silent=True):
-        # Подключаемся к Телеграму
-        self.client = TelethonClient(user, data['phone'])
-
-        # Проверяем последние 10 диалогов
-        _, entities = self.client.get_dialogs(10)
-
-        # Создаем контакты
+        # Словарь будущих контактов
         self.chats = {}
-        for entity in entities:
-            name = CHATS.get(entity.id)
-
-            if name:
-                self.chats[name] = entity
-
-            elif entity.id == SUPERGROUP_ID:
-                self.chats['group'] = entity
 
         # Определяем тип вывода
         if silent:
@@ -50,31 +36,28 @@ class ChatWarsFarmBot(object):
         else:
             log_file = None
 
+        # Добавляем модули
+        self.client = TelethonClient(user, data['phone'])
         self.logger = Logger(user, log_file)
-
-        # Устанавливаем важные параметры
-        self.exhaust = time.time()  # время до следующей передышки
-        self.order = None           # приказ на основе полученного из Супергруппы
-        self.status = None          # статус бота до и после битвы
-        self.mid = None             # номер последнего сообщения
-        self.message = None         # содержание последнего сообщения
-
-        # Создаем локации
-        self.locations = LOCATIONS
-
-        # Добавляем модуль с запросами
         self.updater = Updater(
             self.client,
             self.logger,
             self.chats
         )
 
+        # Устанавливаем важные параметры
+        self.exhaust = time.time()      # время до следующей передышки
+        self.order = None               # приказ из Супергруппы
+        self.status = None              # статус бота до и после битвы
+        self.mid = None                 # номер последнего сообщения
+        self.message = None             # содержание последнего сообщения
+        self.locations = LOCATIONS      # все локации
         self.equipment = data['equip']  # обмундирование
         self.girl = data['girl']
 
-        self.update("/hero")
-        self.flag = get_flag(self.message)    # флаг в виде смайлика
-        self.level = get_level(self.message)  # уровень героя
+        # Флаг и уровень определим позднее
+        self.flag = None
+        self.level = 0
 
         # Если запускаем в Виндоуз, переименовываем окно
         if os.name == 'nt':
@@ -157,6 +140,27 @@ class ChatWarsFarmBot(object):
 
     def start(self):
         """ Запускает бота """
+        # Подключаемся к Телеграму
+        self.client.connect_with_code()
+
+        # Проверяем последние 10 диалогов
+        _, entities = self.client.get_dialogs(10)
+
+        # Создаем контакты
+        for entity in entities:
+            name = CHATS.get(entity.id)
+
+            if name:
+                self.chats[name] = entity
+
+            elif entity.id == SUPERGROUP_ID:
+                self.chats['group'] = entity
+
+        # Определяем флаг и уровень
+        self.update("/hero")
+        self.flag = get_flag(self.message)    # флаг в виде смайлика
+        self.level = get_level(self.message)  # уровень героя
+
         while True:
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
