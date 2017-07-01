@@ -98,21 +98,13 @@ class Main(object):
         user: название бота для лог-файла и файла сессии
         params: словарь с параметрами из sessions.py
         """
-        # Очищаем лог, если перезапускаем вручную
-        if self.silent:
-            with open("logs/" + user + ".log", 'w') as target:
-                target.truncate()
-
         while True:
             bot = ChatWarsFarmBot(user, params, self.silent)
 
             try:
-                # Если выводим в консоль, начинаем без задержки
-                if self.silent:
-                    bot.logger.sleep(r.random() * 30, "Я люблю спать", False)
+                bot.connect()
 
                 # Перезагружаем и откладываем все действия
-                level = " фармитель {}-го уровня!".format(bot.level)
                 if self.reboots[user]:
                     for location in bot.locations:
                         location.postpone()
@@ -120,7 +112,6 @@ class Main(object):
                     time.sleep(r.random() * 180)
 
                 # Поехали
-                bot.updater.send_group(bot.flag + "Просыпается" + level)
                 bot.start()
 
             except OSError as err:
