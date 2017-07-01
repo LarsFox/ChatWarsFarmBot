@@ -434,6 +434,9 @@ class ChatWarsFarmBot(object):
 
     def fight(self):
         """ Отправляет команды сражения с монстром """
+        # Сначала помогаем друзьям
+        self.help_other()
+
         self.update()
         command = get_fight_command(self.message)
 
