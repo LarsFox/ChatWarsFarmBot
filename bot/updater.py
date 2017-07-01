@@ -53,15 +53,15 @@ class Updater(object):
         Отправляет сообщение Супергруппе
         message: строка-текст сообщения с Маркдауном
         """
-        self.client.send_text(self.chats["group"], message)
+        self.send_message("group", message)
 
     def send_penguin(self):
         """ Отправляет инвентарь Пингвину """
-        self.client.send_text(self.chats["trade_bot"], "/start")
+        self.send_message("trade_bot", "/start")
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
         _, message = self.client.get_message(self.chats["trade_bot"])
-        self.client.send_text(self.chats["penguin"], message)
+        self.send_message("penguin", message)
         return True
 
     def send_message(self, entity_key, message):
