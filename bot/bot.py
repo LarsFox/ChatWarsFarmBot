@@ -303,7 +303,7 @@ class ChatWarsFarmBot(object):
         # Обновляем информацию у Пингвина
         if self.level >= 15:
             self.updater.send_penguin()
-            self.sleep(random.random() * 180, "Создаю временное отклонение")
+            self.logger.sleep(random.random() * 180, "Создаю временное отклонение")
 
         # Забываем боевой статус и приказ
         self.order = None
