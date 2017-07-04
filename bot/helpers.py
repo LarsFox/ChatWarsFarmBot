@@ -19,7 +19,7 @@ def get_equip(message):
     for item in re.findall("(?<=_)[0-9]+", message):
         for weapon_type, hands in equip.items():
             for hand, weapon_id in hands.items():
-                stats = EQUIP[hand].get(str(item), {}).get(weapon_type, 0)
+                stats = EQUIP[hand].get(int(item), {}).get(weapon_type, 0)
                 current = EQUIP[hand].get(weapon_id, 0)
 
                 if stats > current:
