@@ -68,7 +68,7 @@ class Main(object):
             user = self.users[0]
             params = SESSIONS.get(user)
             bot = ChatWarsFarmBot(user, params, self.silent)
-            _, message = bot.client.get_message(bot.chats["telegram"])
+            _, message = bot.client.get_message(bot.updater.chats["telegram"])
             sys.exit(message[:23])
 
         # Остальной набор
@@ -118,11 +118,11 @@ class Main(object):
                 bot.logger.log("Ошибка: " + str(err))
                 time.sleep(60*r.random())
 
-            except telethon.RPCError:
+            except telethon.errors.RPCError:
                 bot.logger.log("Ошибка РПЦ, посплю немного")
                 time.sleep(60*r.random())
 
-            except telethon.BadMessageError:
+            except telethon.errors.BadMessageError:
                 bot.logger.log("Плохое сообщение, немного посплю")
                 time.sleep(120 + 60*r.random())
 
