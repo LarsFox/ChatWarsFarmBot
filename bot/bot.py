@@ -76,6 +76,8 @@ class ChatWarsFarmBot(object):
         self.update("/hero")
         self.flag = get_flag(self.message)        # флаг в виде смайлика
         self.level = get_level(self.message)      # уровень героя
+
+        self.update("/inv")
         self.equipment = get_equip(self.message)  # словарь с предметами
 
         # Отправляем сообщение о пробуждении
