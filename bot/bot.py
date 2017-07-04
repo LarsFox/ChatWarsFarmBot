@@ -15,7 +15,8 @@ from bot.data import COOLDOWN, HERO, HELLO, \
                      ATTACK, DEFEND, ALLY, WIND, VERBS, HANDS, REGROUP, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
-from bot.helpers import Logger, get_fight_command, get_level, get_flag
+from bot.helpers import Logger, \
+                        get_fight_command, get_level, get_flag, get_equip
 from bot.updater import Updater
 from modules.locations import LOCATIONS
 from sessions import CAVE_LEVEL, CAVE_CHANCE
@@ -46,10 +47,10 @@ class ChatWarsFarmBot(object):
         self.exhaust = time.time()      # время до следующей передышки
         self.order = None               # приказ из Супергруппы
         self.status = None              # статус бота до и после битвы
-        self.mid = None                 # номер последнего сообщения
+        self.mid = 0                    # номер последнего сообщения
         self.message = None             # содержание последнего сообщения
         self.locations = LOCATIONS      # все локации
-        self.equipment = data['equip']  # обмундирование
+        self.equipment = {}             # обмундирование
         self.girl = data['girl']
 
         # Флаг и уровень определим позднее
@@ -73,8 +74,9 @@ class ChatWarsFarmBot(object):
 
         # Определяем флаг и уровень
         self.update("/hero")
-        self.flag = get_flag(self.message)    # флаг в виде смайлика
-        self.level = get_level(self.message)  # уровень героя
+        self.flag = get_flag(self.message)        # флаг в виде смайлика
+        self.level = get_level(self.message)      # уровень героя
+        self.equipment = get_equip(self.message)  # словарь с предметами
 
         # Отправляем сообщение о пробуждении
         self.updater.send_group(self.flag + HELLO.format(self.level))

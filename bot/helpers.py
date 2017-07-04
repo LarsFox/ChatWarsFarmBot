@@ -8,7 +8,26 @@ import random
 import re
 import time
 
-from bot.data import WAR, GENITIVES, FIGHT
+from bot.data import ATTACK, DEFEND, RIGHT, LEFT, EQUIP, \
+                     WAR, GENITIVES, FIGHT
+
+
+def get_equip(message):
+    """ Возвращает словарь с лучшими предметами """
+    equip = {ATTACK: {LEFT: 0, RIGHT: 0}, DEFEND: {LEFT: 0, RIGHT: 0}}
+
+    for item in re.findall("(?<=_)[0-9]+", message):
+        for weapon_type, hands in equip.values():
+            for hand, weapon_id in hands.values():
+                stats = EQUIP[hand].get(str(item), {}).get(weapon_type, 0)
+                current = EQUIP[hand].get(weapon_id, 0)
+
+                if stats > current:
+                    equip[hand][weapon_type] = str(item)
+                    break
+
+    print(equip)
+    return equip
 
 
 def get_level(message):

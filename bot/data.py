@@ -66,11 +66,38 @@ for verb, string in VERBS[False].items():
     VERBS[True][verb] = string + "а "
     VERBS[False][verb] = string + " "
 
-RIGHT = "правую руку"
-LEFT = "левую руку"
+RIGHT = "правую руку"  # мечи, копья, кирки и молоты
+LEFT = "левую руку"    # кинжалы и щиты
 HANDS = {
     DEFEND: "предмет для защиты на ",
     ATTACK: "предмет для атаки на "
+}
+
+EQUIP = {
+    RIGHT: {
+        100: {ATTACK: 1, DEFEND: 0},    # меч ученика
+        101: {ATTACK: 3, DEFEND: 0},    # короткий меч
+        102: {ATTACK: 6, DEFEND: 0},    # длинный меч
+        103: {ATTACK: 10, DEFEND: 0},   # меч вдовы
+        104: {ATTACK: 16, DEFEND: 0},
+        105: {ATTACK: 18, DEFEND: 2},   # эльфийский меч
+        106: {ATTACK: 22, DEFEND: 0},   # рапира
+        108: {ATTACK: 3, DEFEND: 1},    # короткое копье
+        109: {ATTACK: 13, DEFEND: 3},   # длинное копьее
+        110: {ATTACK: 14, DEFEND: 9},   # эльфийское копье
+        119: {ATTACK: 3, DEFEND: 3},    # кирка
+        120: {ATTACK: 14, DEFEND: 17},  # молот гномов
+    },
+    LEFT: {
+        112: {ATTACK: 1, DEFEND: 0},    # кухонный нож
+        113: {ATTACK: 3, DEFEND: 0},    # боевой нож
+        114: {ATTACK: 7, DEFEND: 0},    # кинжал
+        212: {ATTACK: 0, DEFEND: 1},    # деревянный щит
+        213: {ATTACK: 0, DEFEND: 2},    # щит скелета
+        214: {ATTACK: 0, DEFEND: 3},    # бронзовый щит
+        215: {ATTACK: 0, DEFEND: 5},    # серебряный щит
+        216: {ATTACK: 0, DEFEND: 7},    # мифриловый щит
+    },
 }
 
 HELLO = "Просыпается фармитель {} уровня!"
