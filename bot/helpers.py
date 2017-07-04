@@ -23,7 +23,7 @@ def get_equip(message):
                 current = EQUIP[hand].get(weapon_id, 0)
 
                 if stats > current:
-                    equip[hand][weapon_type] = str(item)
+                    equip[weapon_id][weapon_type] = int(item)
                     break
 
     print(equip)
