@@ -221,6 +221,9 @@ class ChatWarsFarmBot(object):
         if "Вы потеряли" in self.updater.message:
             self.updater.send_group(self.updater.message)
 
+        # Обновляем инвентарь
+        self.equipment = self.updater.equipment
+
         # Надеваем защитную одежду для лучшего сбора, если шли в атаку
         if self.status == ATTACK:
             self.equip(DEFEND)
