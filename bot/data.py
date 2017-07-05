@@ -75,6 +75,7 @@ HANDS = {
 
 EQUIP = {
     RIGHT: {
+        # (!) добавить копья и набор для крафта, если появятся копья
         100: {ATTACK: 1, DEFEND: 0},    # меч ученика
         101: {ATTACK: 3, DEFEND: 0},    # короткий меч
         102: {ATTACK: 6, DEFEND: 0},    # длинный меч
@@ -82,13 +83,11 @@ EQUIP = {
         104: {ATTACK: 16, DEFEND: 0},
         105: {ATTACK: 18, DEFEND: 2},   # эльфийский меч
         106: {ATTACK: 22, DEFEND: 0},   # рапира
-        108: {ATTACK: 3, DEFEND: 1},    # короткое копье
-        109: {ATTACK: 13, DEFEND: 3},   # длинное копьее
-        110: {ATTACK: 14, DEFEND: 9},   # эльфийское копье
         119: {ATTACK: 3, DEFEND: 3},    # кирка
         120: {ATTACK: 14, DEFEND: 17},  # молот гномов
     },
     LEFT: {
+        # (!) добавить все предметы
         112: {ATTACK: 1, DEFEND: 0},    # кухонный нож
         113: {ATTACK: 3, DEFEND: 0},    # боевой нож
         114: {ATTACK: 7, DEFEND: 0},    # кинжал

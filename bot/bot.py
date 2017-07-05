@@ -7,16 +7,15 @@ import datetime
 import os
 import random
 import time
-import sys
 
 
 from bot.client import TelethonClient
 from bot.data import COOLDOWN, HERO, HELLO, \
-                     ATTACK, DEFEND, ALLY, WIND, VERBS, HANDS, REGROUP, \
+                     ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
-from bot.helpers import Logger, \
-                        get_fight_command, get_level, get_flag, get_equip
+from bot.helpers import get_fight_command, get_level, get_flag
+from bot.logger import Logger
 from bot.updater import Updater
 from modules.locations import LOCATIONS
 from sessions import CAVE_LEVEL, CAVE_CHANCE
@@ -40,22 +39,19 @@ class ChatWarsFarmBot(object):
 
         # Добавляем модули
         self.client = TelethonClient(user, data['phone'])
-        self.logger = Logger(user, log_file)
+        self.logger = Logger(user, log_file, data['girl'])
         self.updater = Updater(self.client, self.logger)
 
         # Устанавливаем важные параметры
         self.exhaust = time.time()      # время до следующей передышки
         self.order = None               # приказ из Супергруппы
         self.status = None              # статус бота до и после битвы
-        self.mid = 0                    # номер последнего сообщения
-        self.message = None             # содержание последнего сообщения
         self.locations = LOCATIONS      # все локации
-        self.equipment = {}             # обмундирование
-        self.girl = data['girl']
 
-        # Флаг и уровень определим позднее
+        # Флаг, уровень и обмундирование определим позднее
         self.flag = None
         self.level = 0
+        self.equipment = {}
 
         # Если запускаем в Виндоуз, переименовываем окно
         if os.name == 'nt':
@@ -73,97 +69,21 @@ class ChatWarsFarmBot(object):
         self.updater.update_chats()
 
         # Определяем флаг и уровень
-        self.update("/hero")
-        self.flag = get_flag(self.message)        # флаг в виде смайлика
-        self.level = get_level(self.message)      # уровень героя
-
-        self.update("/inv")
-        self.equipment = get_equip(self.message)  # словарь с предметами
+        self.updater.update("/hero")
+        self.flag = get_flag(self.updater.message)     # флаг в виде смайлика
+        self.level = get_level(self.updater.message)   # уровень героя
+        self.equipment = self.updater.equipment
 
         # Отправляем сообщение о пробуждении
         self.updater.send_group(self.flag + HELLO.format(self.level))
 
     # Системные функции
 
-    def update(self, message=None, sleep=5, wind=None):
-        """
-        Отправляет сообщение Боту и 7 раз спит, ожидая новый ответ.
-        Возвращает True, если был получен новый ответ, и капча пройдена;
-        False, если новый ответ не был получен, или он — «ветер»
-        message: строка, сообщение к отправке
-        sleep: число секунд — пауза после отправки сообщения
-        wind: строка-сообщение для вывода в случае ветра, по умолчанию None
-        """
-        if message:
-            self.updater.send_message("cw", message)
-            self.logger.sleep(sleep)
-
-        for i in range(1, 7):
-            mid, message = self.updater.bot_message
-
-            if self.mid == mid:
-                self.logger.sleep(10, "Жду сообщение: {}/6".format(i))
-
-            else:
-                self.mid, self.message = mid, message
-
-                # Ветер
-                if "завывает" in self.message:
-                    if wind is None:
-                        wind = "отправку «{}»".format(message)
-
-                    self.logger.log(VERBS[self.girl][WIND] + wind + "! :(")
-                    return False
-
-                # Пробуем обойти капчу
-                return self.captcha()
-
-        # Новый ответ получен не был
-        return False
-
-    def captcha(self):
-        """ Обходит капчу и останавливает бота, если не обходит """
-        if "На выходе из замка" not in self.message:
-            return True
-
-        if "Не умничай" in self.message:
-            self.stop()
-
-        elif "Не шути" in self.message:
-            self.stop()
-
-        elif "вспотел" in self.message:
-            self.stop()
-
-        self.logger.log("Капча!")
-        self.updater.send_message("captcha_bot", self.message)
-        self.logger.sleep(10, "Десять секунд, жду Капчеватора")
-
-        _, captcha_answer = self.client.get_message(
-            self.updater.chats["captcha_bot"])
-
-        if "Не распознано" in captcha_answer:
-            self.stop()
-
-        self.logger.log("Отдаю ответ")
-        self.update(captcha_answer)
-
-        return True
-
-    def stop(self):
-        """ Останавливает бота """
-        self.updater.send_group("У меня тут проблема")
-        self.updater.send_group(self.message)
-        sys.exit()  # (!) проверить, выключаются ли все боты или один
-
     def start(self):
         """ Запускает бота """
         while True:
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
-
-            # Собираем сообщение
-            self.mid, self.message = self.updater.bot_message
 
             # Защищаем КОРОВАНЫ
             self.caravan()
@@ -243,14 +163,14 @@ class ChatWarsFarmBot(object):
             self.hero()
             self.logger.log("Иду в атаку")
 
-            if not self.update(ATTACK, wind="пойти в атаку"):
+            if not self.updater.update(ATTACK, wind="пойти в атаку"):
                 return False
 
-            if not self.update(order, wind="отправить приказ к атаке"):
+            if not self.updater.update(order, wind="отправить приказ к атаке"):
                 return False
 
             # Нападение на союзника! Сидим дома
-            if "защите" in self.message:
+            if "защите" in self.updater.message:
                 self.logger.log("Не могу атаковать союзника")
                 self.defend()
                 self.status = ALLY  # не защита, но и атаковать не надо
@@ -268,11 +188,11 @@ class ChatWarsFarmBot(object):
         self.hero()
         self.logger.log("Становлюсь в защиту")
 
-        if not self.update(DEFEND, wind="стать в защиту"):
+        if not self.updater.update(DEFEND, wind="стать в защиту"):
             return False
 
-        if "будем держать оборону" in self.message:
-            if not self.update(self.flag, wind="отправить приказ к защите"):
+        if "будем держать оборону" in self.updater.message:
+            if not self.updater.update(self.flag, wind="стать в защиту"):
                 return False
 
         self.order = self.flag
@@ -290,15 +210,16 @@ class ChatWarsFarmBot(object):
             return False
 
         # Бот игры еще не проснулся, пропускаем
-        if not self.update("/report"):
+        if not self.updater.update("/report"):
             return False
 
         # Оповещаем Супергруппу о полученном приказе
-        self.updater.send_group(VERBS[self.girl][self.status] + self.order)
+        verb = VERBS[self.logger.girl][self.status]
+        self.updater.send_group(verb + self.order)
 
         # Если был потерян предмет, оповещаем Супергруппу о беде
-        if "Вы потеряли" in self.message:
-            self.updater.send_group(self.message)
+        if "Вы потеряли" in self.updater.message:
+            self.updater.send_group(self.updater.message)
 
         # Надеваем защитную одежду для лучшего сбора, если шли в атаку
         if self.status == ATTACK:
@@ -307,7 +228,7 @@ class ChatWarsFarmBot(object):
         # Обновляем информацию у Пингвина
         if self.level >= 15:
             self.updater.send_penguin()
-            self.logger.sleep(random.random() * 180, "Создаю временное отклонение")
+            self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
 
         # Забываем боевой статус и приказ
         self.order = None
@@ -318,15 +239,15 @@ class ChatWarsFarmBot(object):
     def equip(self, state):
         """
         Надевает указанные предметы
-        state: ключ, с которым указаны предметы в параметре equip сессии
+        state: ключ, по которому будут выбраны предметы
         """
-        for hand, equip in self.equipment.items():
+        for slot, equip in self.equipment.items():
             if len(equip) == 2:
                 item = EQUIP_ITEM.format(equip[state])
                 self.logger.log("Надеваю: {}".format(item))
 
-                wind = "надеть " + HANDS[state] + hand
-                if not self.update(item, 3, wind):
+                wind = "надеть " + HANDS[state] + slot
+                if not self.updater.update(item, 3, wind):
                     return False
 
         self.logger.log("Завершаю команду {}".format(state))
@@ -362,7 +283,7 @@ class ChatWarsFarmBot(object):
 
             # Отправляем сообщение с локацией
             self.logger.log("Отправляю " + location.console)
-            self.update(location.emoji)
+            self.updater.update(location.emoji)
 
             # Откладываем следующий поход
             self.logger.log("Следующий {} через {:.3f} минут".format(
@@ -375,7 +296,7 @@ class ChatWarsFarmBot(object):
                 continue
 
             # Если устали, откладываем отправку всех команд
-            if "мало единиц выносливости" in self.message:
+            if "мало единиц выносливости" in self.updater.message:
                 self.logger.log("~Выдохся, поживу без приключений пару часов")
 
                 exhaust = time.time() + COOLDOWN + random.random() * 3600
@@ -383,7 +304,7 @@ class ChatWarsFarmBot(object):
                 return False
 
             # Если уже в пути, прерываем отправку команд
-            if "сейчас занят другим приключением" in self.message:
+            if "сейчас занят другим приключением" in self.updater.message:
                 self.logger.log("А, я же не дома")
                 return False
 
@@ -400,14 +321,14 @@ class ChatWarsFarmBot(object):
 
     def hero(self):
         """ Запрашивает профиль героя и увеличивает уровень """
-        self.update(HERO)
+        self.updater.update(HERO)
 
-        if LEVEL_UP in self.message:
+        if LEVEL_UP in self.updater.message:
             self.logger.log("Ух-ты, новый уровень!")
-            self.update(LEVEL_UP)
+            self.updater.update(LEVEL_UP)
 
-            if "какую характеристику ты" in self.message:
-                self.update(PLUS_ONE)
+            if "какую характеристику ты" in self.updater.message:
+                self.updater.update(PLUS_ONE)
                 self.level += 1
                 self.updater.send_group(
                     "Новый уровень: `{}`!".format(self.level))
@@ -419,9 +340,9 @@ class ChatWarsFarmBot(object):
 
     def caravan(self):
         """ Перехватывает КОРОВАН """
-        if CARAVAN in self.message:
+        if CARAVAN in self.updater.message:
             self.logger.log("Защищаю караван")
-            self.update(CARAVAN)
+            self.updater.update(CARAVAN)
             self.logger.sleep(45, "~Минутку посплю после каравана", False)
 
         return True
@@ -433,7 +354,7 @@ class ChatWarsFarmBot(object):
         if command:
             self.logger.log("Иду на помощь: {}".format(command))
             self.updater.send_group("+")
-            self.update(command)
+            self.updater.update(command)
 
         return True
 
@@ -442,13 +363,13 @@ class ChatWarsFarmBot(object):
         # Сначала помогаем друзьям
         self.help_other()
 
-        self.update()
-        command = get_fight_command(self.message)
+        self.updater.update()
+        command = get_fight_command(self.updater.message)
 
         if command:
             self.logger.sleep(5, "Монстр! Сплю пять секунд перед дракой")
             self.updater.send_group(command)
-            self.update(command)
+            self.updater.update(command)
 
         return True
 

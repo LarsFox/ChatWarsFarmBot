@@ -1,33 +1,49 @@
 # coding=utf-8
 """
-Вспомогательные функции и Логгер
+Вспомогательные функции
 """
 
-import datetime
-import random
 import re
-import time
+
 
 from bot.data import ATTACK, DEFEND, RIGHT, LEFT, EQUIP, \
                      WAR, GENITIVES, FIGHT
 
 
-def get_equip(message):
+def get_equipment(message):
     """ Возвращает словарь с лучшими предметами """
-    equip = {ATTACK: {LEFT: 0, RIGHT: 0}, DEFEND: {LEFT: 0, RIGHT: 0}}
+    equip = {LEFT: {ATTACK: 0, DEFEND: 0}, RIGHT: {ATTACK: 0, DEFEND: 0}}
 
+    # Проверяем каждый предмет
     for item in re.findall("(?<=_)[0-9]+", message):
-        for weapon_type, hands in equip.items():
-            for hand, weapon_id in hands.items():
-                stats = EQUIP[hand].get(int(item), {}).get(weapon_type, 0)
-                current = EQUIP[hand].get(weapon_id, 0)
+        for slot, slot_items in EQUIP.items():
+            stats = slot_items.get(int(item))
 
-                if stats > current:
-                    equip[weapon_id][weapon_type] = int(item)
-                    break
+            # Пропускаем, если предмет в ячейке не используется
+            if not stats:
+                continue
 
-    print(equip)
+            # Проверяем атрибуты предмета
+            for stat_name, value in stats.items():
+                current = slot_items.get(equip[slot][stat_name])
+
+                # Если находим лучший предмет, записываем его
+                if not current or current.get(stat_name, 0) < value:
+                    equip[slot][stat_name] = int(item)
+
+    # Если предмет лучший во всех случаях, убираем его лишние упоминания
+    for slot, slot_items in equip.items():
+        equip[slot] = remove_duplicate_values(slot_items)
     return equip
+
+
+def remove_duplicate_values(dictionary):
+    """ Удаляет ключи, значения которых повторяются """
+    result = {}
+    for key, value in dictionary.items():
+        if value not in result.values():
+            result[key] = value
+    return result
 
 
 def get_level(message):
@@ -49,52 +65,3 @@ def get_fight_command(message):
         return message[command:command+27]
 
     return None
-
-
-class Logger(object):
-    """ Объект для записи сообщений, каждому — свой """
-    def __init__(self, user, log_file):
-        self.user = user
-        self.log_file = log_file
-
-    def log(self, text):
-        """
-        Выводит сообщение в консоль или в файл
-        text: строка-сообщение для вывода
-        """
-        message = '[{0:%Y-%m-%d %H:%M:%S}/{1}] {2}'.format(
-            datetime.datetime.now(),
-            self.user,
-            text
-        )
-
-        if self.log_file:
-            with open(self.log_file, "a") as target:
-                target.write(message + '\n')
-
-        else:
-            print(message)
-
-    def sleep(self, duration, message=None, exact=True):
-        """
-        Спит и выводит сообщение
-        duration: целое число, длина сна в секундах
-        message: строка, собственное сообщение в лог вместо «Сон в секундах»
-        exact: добавление до 30 секунд к duration, по умолчанию False
-        """
-        if not exact:
-            duration += random.random() * 30
-
-        if message:
-            if "{" in message:
-                self.log(message.format(duration/60))
-
-            else:
-                self.log(message)
-
-        else:
-            self.log("Сон в секундах: {}".format(duration))
-
-        time.sleep(duration)
-
-        return True
