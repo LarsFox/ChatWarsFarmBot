@@ -160,13 +160,13 @@ class ChatWarsFarmBot(object):
         order: смайлик флага, который отправится боту
         """
         if order and order != self.flag:
-            self.hero()
+            self.hero(True)
             self.logger.log("Иду в атаку")
 
-            if not self.updater.update(ATTACK, wind="пойти в атаку"):
+            if not self.updater.update(ATTACK, 2, wind="поход в атаку"):
                 return False
 
-            if not self.updater.update(order, wind="отправить приказ к атаке"):
+            if not self.updater.update(order, 2, wind="приказ к атаке"):
                 return False
 
             # Нападение на союзника! Сидим дома
@@ -185,14 +185,14 @@ class ChatWarsFarmBot(object):
 
     def defend(self):
         """ Надевает одежду для сбора и становится в защиту """
-        self.hero()
+        self.hero(True)
         self.logger.log("Становлюсь в защиту")
 
-        if not self.updater.update(DEFEND, wind="стать в защиту"):
+        if not self.updater.update(DEFEND, 2, wind="поход в защиту"):
             return False
 
         if "будем держать оборону" in self.updater.message:
-            if not self.updater.update(self.flag, wind="стать в защиту"):
+            if not self.updater.update(self.flag, 2, wind="приказ к защите"):
                 return False
 
         self.order = self.flag
@@ -322,8 +322,15 @@ class ChatWarsFarmBot(object):
 
         return True
 
-    def hero(self):
-        """ Запрашивает профиль героя и увеличивает уровень """
+    def hero(self, quick=False):
+        """
+        Запрашивает профиль героя и увеличивает уровень
+        quick: отправить только запрос с короткой задержкой
+        """
+        if quick:
+            self.updater.update(HERO, 2)
+            return True
+
         self.updater.update(HERO)
 
         if LEVEL_UP in self.updater.message:
