@@ -59,8 +59,8 @@ class TelethonClient(telethon.TelegramClient):
             messages = [messages[i] for i in range(len(senders))
                         if senders[i].id == entity.id]
 
-        if read:
-            self.send_read_acknowledge(entity, messages)
+        # if read:
+            # self.send_read_acknowledge(entity, messages=messages)
 
         message = messages[0]
 
