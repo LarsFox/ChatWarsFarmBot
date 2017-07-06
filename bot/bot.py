@@ -14,11 +14,10 @@ from bot.data import COOLDOWN, HERO, HELLO, \
                      ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
-from bot.helpers import get_fight_command, get_level, get_flag
 from bot.logger import Logger
 from bot.updater import Updater
-from modules.locations import LOCATIONS
-from sessions import CAVE_LEVEL, CAVE_CHANCE
+from modules.helpers import get_fight_command, get_level, get_flag
+from modules.locations import LOCATIONS, QUESTS, SHORE
 
 
 class ChatWarsFarmBot(object):
@@ -43,10 +42,10 @@ class ChatWarsFarmBot(object):
         self.updater = Updater(self.client, self.logger)
 
         # Устанавливаем важные параметры
-        self.exhaust = time.time()      # время до следующей передышки
-        self.order = None               # приказ из Супергруппы
-        self.status = None              # статус бота до и после битвы
-        self.locations = LOCATIONS      # все локации
+        self.exhaust = time.time()         # время до следующей передышки
+        self.order = None                  # приказ из Супергруппы
+        self.status = None                 # статус бота до и после битвы
+        self.locations = LOCATIONS.copy()  # все локации
 
         # Флаг, уровень и обмундирование определим позднее
         self.flag = None
@@ -125,6 +124,8 @@ class ChatWarsFarmBot(object):
 
                 else:
                     self.logger.sleep(105, "~Сил нет, сплю две минуты", False)
+
+            self.updater.read_all_messages()
 
         return True
 
@@ -262,31 +263,27 @@ class ChatWarsFarmBot(object):
 
     def send_locations(self):
         """ Отправляется во все локации """
-        cave = False
         for location in self.locations:
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() - location.after < 0:
                 continue
+
+            # Если требует времени, идем как приключение
+            if not location.instant:
+                self.updater.update(QUESTS)
+                location.update(self.level, self.updater.message)
 
             # Пропускаем, если шанс говорит не идти
             if not location.travel():
                 self.logger.sleep(10, "Пропускаю " + location.console)
                 continue
 
-            # Определяем, идем ли в пещеру
-            if location.console == "поход в пещеру":
-                if self.level < CAVE_LEVEL or random.random() > CAVE_CHANCE:
-                    continue
-
-                cave = True
-
-            # ... и если идем в пещеру, то не идем в лес
-            if location.console == "поход в лес" and cave:
-                continue
+            # Выбираем, куда пойдем
+            emoji = location.emoji
 
             # Отправляем сообщение с локацией
             self.logger.log("Отправляю " + location.console)
-            self.updater.update(location.emoji)
+            self.updater.update(emoji)
 
             # Откладываем следующий поход
             self.logger.log("Следующий {} через {:.3f} минут".format(
@@ -314,7 +311,7 @@ class ChatWarsFarmBot(object):
             self.logger.sleep(310, "Вернусь через 5 минут")
 
             # По возвращении деремся с монстром, если он есть
-            self.fight()
+            self.fight(emoji)
 
             # И ради интереса запрашиваем свой профиль
             if random.random() < 0.4:
@@ -359,7 +356,13 @@ class ChatWarsFarmBot(object):
 
     def help_other(self):
         """ Помогает друзьям из Супергруппы """
-        command = get_fight_command(self.updater.group_message)
+        message = self.updater.group_message
+
+        if SHORE in message:
+            if self.flag not in message:
+                return False
+
+        command = get_fight_command(message)
 
         if command:
             self.logger.log("Иду на помощь: {}".format(command))
@@ -368,7 +371,7 @@ class ChatWarsFarmBot(object):
 
         return True
 
-    def fight(self):
+    def fight(self, emoji):
         """ Отправляет команды сражения с монстром """
         # Сначала помогаем друзьям
         self.help_other()
@@ -378,8 +381,12 @@ class ChatWarsFarmBot(object):
 
         if command:
             self.logger.sleep(5, "Монстр! Сплю пять секунд перед дракой")
-            self.updater.send_group(command)
             self.updater.update(command)
+
+            if emoji == SHORE:
+                self.updater.send_group(self.flag + SHORE + "! " + command)
+            else:
+                self.updater.send_group(command)
 
         return True
 

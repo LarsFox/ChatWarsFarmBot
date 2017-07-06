@@ -6,7 +6,7 @@
 import sys
 
 from bot.data import WAR, WAR_COMMANDS, REGROUP, CHATS, WIND
-from bot.helpers import get_equipment
+from modules.helpers import get_equipment
 from sessions import SUPERGROUP_ID
 
 
@@ -28,7 +28,8 @@ class Updater(object):
     @property
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
-        _, message = self.client.get_message(self.chats["group"], False)
+        _, message = self.client.get_message(self.chats["group"],
+                                             repeat=False)
         return message
 
     @property
@@ -57,6 +58,8 @@ class Updater(object):
 
             elif entity.id == SUPERGROUP_ID:
                 self.chats['group'] = entity
+
+            self.client.get_message(entity, repeat=False)
 
         return True
 
@@ -154,3 +157,8 @@ class Updater(object):
         self.send_group("У меня тут проблема")
         self.send_group(self.message)
         sys.exit()  # (!) проверить, выключаются ли все боты или один
+
+    def read_all_messages(self):
+        """ Проводит запрос последних сообщений и читает их """
+        for entity in self.chats.values():
+            self.client.get_message(entity, repeat=False)

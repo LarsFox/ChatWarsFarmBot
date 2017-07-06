@@ -45,8 +45,7 @@ class TelethonClient(telethon.TelegramClient):
         max_id = max(msg.id for msg in messages)
         return self.invoke(ReadHistoryRequest(peer=get_input_peer(entity), max_id=max_id))
 
-
-    def get_message(self, entity, repeat=True):
+    def get_message(self, entity, repeat=True, read=True):
         """
         Собирает последнее сообщение
         entity: адресат-entity
@@ -63,7 +62,9 @@ class TelethonClient(telethon.TelegramClient):
                 _, messages, senders = self.get_message_history(entity, 10)
                 time.sleep(3)
 
-        self.read_messages(entity, messages)
+        if read:
+            self.read_messages(entity, messages)
+
         message = messages[0]
 
         if getattr(message, 'media', None):
