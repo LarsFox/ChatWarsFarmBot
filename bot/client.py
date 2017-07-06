@@ -7,8 +7,6 @@ import sys
 import time
 
 import telethon
-from telethon.tl.functions.messages import ReadHistoryRequest
-from telethon.utils import get_input_peer
 
 from sessions import API_ID, API_HASH
 
@@ -40,11 +38,6 @@ class TelethonClient(telethon.TelegramClient):
             # Выходим, чтобы запросить код в следующей сессии
             sys.exit("{} код получил, перезапускай.".format(self.user))
 
-    def read_messages(self, entity, messages):
-        """ Отправляет уведомление о прочтении сообщений """
-        max_id = max(msg.id for msg in messages)
-        return self.invoke(ReadHistoryRequest(peer=get_input_peer(entity), max_id=max_id))
-
     def get_message(self, entity, repeat=True, read=True):
         """
         Собирает последнее сообщение
@@ -63,7 +56,7 @@ class TelethonClient(telethon.TelegramClient):
                 time.sleep(3)
 
         if read:
-            self.read_messages(entity, messages)
+            self.send_read_acknowledge(entity, messages)
 
         message = messages[0]
 
