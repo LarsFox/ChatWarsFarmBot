@@ -80,10 +80,6 @@ class Main(object):
             if not params:
                 continue
 
-            # Без одежды не запускаем
-            if "equip" not in params:
-                continue
-
             worker = mp.Process(target=self.launch_user,
                                 args=(user, params))
 
@@ -118,8 +114,9 @@ class Main(object):
                 bot.logger.log("Ошибка: " + str(err))
                 time.sleep(60*r.random())
 
-            except telethon.errors.RPCError:
+            except telethon.errors.RPCError as err:
                 bot.logger.log("Ошибка РПЦ, посплю немного")
+                bot.logger.log(err)
                 time.sleep(60*r.random())
 
             except telethon.errors.BadMessageError:

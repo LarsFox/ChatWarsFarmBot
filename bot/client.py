@@ -42,7 +42,7 @@ class TelethonClient(telethon.TelegramClient):
         """
         Собирает последнее сообщение
         entity: адресат-entity
-        repeat: повторяем сбор, пока не получим сообщение от адресата
+        repeat: повторяем сбор, пока последнее сообщение не от адресата
         Возвращаем номер сообщения и его содержимое
         """
         _, messages, senders = self.get_message_history(entity, 10)
@@ -54,6 +54,10 @@ class TelethonClient(telethon.TelegramClient):
 
                 _, messages, senders = self.get_message_history(entity, 10)
                 time.sleep(3)
+
+        else:
+            messages = [messages[i] for i in range(len(senders))
+                        if senders[i].id == entity.id]
 
         if read:
             self.send_read_acknowledge(entity, messages)
