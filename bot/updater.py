@@ -29,7 +29,7 @@ class Updater(object):
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
         _, message = self.client.get_message(self.chats["group"],
-                                             repeat=False)
+                                             last=False)
         return message
 
     @property
@@ -59,7 +59,7 @@ class Updater(object):
             elif entity.id == SUPERGROUP_ID:
                 self.chats['group'] = entity
 
-            self.client.get_message(entity, repeat=False)
+            self.client.get_message(entity, last=False)
 
         return True
 
@@ -161,4 +161,4 @@ class Updater(object):
     def read_all_messages(self):
         """ Проводит запрос последних сообщений и читает их """
         for entity in self.chats.values():
-            self.client.get_message(entity, repeat=False)
+            self.client.get_message(entity, last=False)

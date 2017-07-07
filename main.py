@@ -58,6 +58,7 @@ class Main(object):
             user = self.users[0]
             params = SESSIONS.get(user)
             bot = ChatWarsFarmBot(user, params, self.silent)
+            bot.connect()
             sys.exit("Код уже был введен!")
 
         # -c

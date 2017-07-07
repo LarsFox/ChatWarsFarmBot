@@ -74,7 +74,7 @@ class ChatWarsFarmBot(object):
         self.equipment = self.updater.equipment
 
         # Отправляем сообщение о пробуждении
-        self.updater.send_group(self.flag + HELLO.format(self.level))
+        self.updater.send_group(HELLO.format(self.flag, self.level))
 
     # Системные функции
 
@@ -274,7 +274,7 @@ class ChatWarsFarmBot(object):
                 location.update(self.level, self.updater.message)
 
             # Пропускаем, если шанс говорит не идти
-            if not location.travel():
+            if not location.travel:
                 self.logger.sleep(10, "Пропускаю " + location.console)
                 continue
 
