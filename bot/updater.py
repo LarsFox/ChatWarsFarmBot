@@ -88,17 +88,17 @@ class Updater(object):
                                  markdown=True,
                                  no_web_page=True)
 
-    def update(self, message=None, sleep=5, wind=None):
+    def update(self, text=None, sleep=5, wind=None):
         """
         Отправляет сообщение Боту и 7 раз спит, ожидая новый ответ.
         Возвращает True, если был получен новый ответ, и капча пройдена;
         False, если новый ответ не был получен, или он — «ветер»
-        message: строка, сообщение к отправке
+        text: строка, сообщение к отправке
         sleep: число секунд — пауза после отправки сообщения
         wind: строка-сообщение для вывода в случае ветра, по умолчанию None
         """
         if message:
-            self.send_message("cw", message)
+            self.send_message("cw", text)
             self.logger.sleep(sleep)
 
         for i in range(1, 7):
@@ -113,7 +113,7 @@ class Updater(object):
                 # Ветер
                 if "завывает" in self.message:
                     if wind is None:
-                        wind = "отправку «{}»".format(message)
+                        wind = "отправку «{}»".format(text)
 
                     self.logger.log_sexy(WIND, wind + "! :(")
                     return False
