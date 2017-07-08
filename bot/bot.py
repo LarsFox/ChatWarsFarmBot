@@ -360,9 +360,12 @@ class ChatWarsFarmBot(object):
 
     def help_other(self):
         """ Помогает друзьям из Супергруппы """
-        message = self.updater.group_message
+        message, content = self.updater.group_message
 
-        if SHORE in message:
+        if message.from_id == self.client.user_id:
+            return False
+
+        if SHORE in content:
             if self.flag not in message:
                 return False
 

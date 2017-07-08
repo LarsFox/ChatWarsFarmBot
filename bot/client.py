@@ -48,7 +48,7 @@ class TelethonClient(telethon.TelegramClient):
         entity: адресат-entity
         last: повторяем сбор, пока последнее сообщение не от адресата
         read: отправляем сообщение о прочтении
-        Возвращает номер сообщения и его содержимое
+        Возвращает сообщение и его содержимое для отображения
         """
         _, messages, senders = self.get_message_history(entity, 7)
 
@@ -89,4 +89,4 @@ class TelethonClient(telethon.TelegramClient):
         else:
             content = message.__class__.__name__
 
-        return message.id, content
+        return message, content

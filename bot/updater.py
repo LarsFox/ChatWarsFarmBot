@@ -23,22 +23,24 @@ class Updater(object):
     @property
     def bot_message(self):
         """ Последнее сообщение от бота игры """
-        return self.client.get_message(self.chats["cw"])
+        message, content = self.client.get_message(self.chats["cw"])
+        return message.id, content
 
     @property
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
-        _, message = self.client.get_message(self.chats["group"],
-                                             last=False)
-        return message
+        message, content = self.client.get_message(self.chats["group"],
+                                                   last=False)
+        return message, content
 
     @property
     def order(self):
         """ Приказ на основе последнего сообщения в Супергруппе """
-        message = self.group_message.lower()
-        if message == REGROUP:
-            return message
-        return WAR.get(WAR_COMMANDS.get(message))
+        _, content = self.group_message
+        content = content.lower()
+        if content == REGROUP:
+            return content
+        return WAR.get(WAR_COMMANDS.get(content))
 
     @property
     def equipment(self):
@@ -75,8 +77,8 @@ class Updater(object):
         self.send_message("trade_bot", "/start")
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
-        _, message = self.client.get_message(self.chats["trade_bot"])
-        self.send_message("penguin", message)
+        _, content = self.client.get_message(self.chats["trade_bot"])
+        self.send_message("penguin", content)
         return True
 
     def send_message(self, entity_key, message):
