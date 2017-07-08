@@ -71,7 +71,7 @@ class ChatWarsFarmBot(object):
         updated = False
         while not updated:
             updated = self.updater.update("/hero")
-            self.sleep(300, "Проблемы при пробуждении, посплю еще немного!")
+            self.logger.sleep(300, "Проблемы при пробуждении, посплю еще немного!")
 
         self.flag = get_flag(self.updater.message)     # флаг в виде смайлика
         self.level = get_level(self.updater.message)   # уровень героя

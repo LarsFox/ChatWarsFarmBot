@@ -97,7 +97,7 @@ class Updater(object):
         sleep: число секунд — пауза после отправки сообщения
         wind: строка-сообщение для вывода в случае ветра, по умолчанию None
         """
-        if message:
+        if text:
             self.send_message("cw", text)
             self.logger.sleep(sleep)
 
