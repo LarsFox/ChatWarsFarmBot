@@ -14,9 +14,9 @@ from bot.data import COOLDOWN, HERO, HELLO, \
                      ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP, \
                      CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
 
-from bot.helpers import get_fight_command, get_level, get_flag
 from bot.logger import Logger
 from bot.updater import Updater
+from modules.helpers import get_fight_command, get_level, get_flag
 from modules.locations import LOCATIONS
 from sessions import CAVE_LEVEL, CAVE_CHANCE
 
@@ -359,7 +359,12 @@ class ChatWarsFarmBot(object):
 
     def help_other(self):
         """ Помогает друзьям из Супергруппы """
-        command = get_fight_command(self.updater.group_message)
+        message, content = self.updater.group_message
+
+        if message.id == self.client.user_id:
+            return False
+
+        command = get_fight_command(content)
 
         if command:
             self.logger.log("Иду на помощь: {}".format(command))
