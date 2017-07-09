@@ -6,7 +6,7 @@
 import sys
 
 from bot.data import WAR, WAR_COMMANDS, REGROUP, CHATS, WIND
-from bot.helpers import get_equipment
+from modules.helpers import get_equipment
 from sessions import SUPERGROUP_ID
 
 
@@ -23,21 +23,22 @@ class Updater(object):
     @property
     def bot_message(self):
         """ Последнее сообщение от бота игры """
-        return self.client.get_message(self.chats["cw"])
+        message, content = self.client.get_message(self.chats["cw"])
+        return message.id, content
 
     @property
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
-        _, message = self.client.get_message(self.chats["group"], False)
-        return message
+        return self.client.get_message(self.chats["group"], False)
 
     @property
     def order(self):
         """ Приказ на основе последнего сообщения в Супергруппе """
-        message = self.group_message.lower()
-        if message == REGROUP:
-            return message
-        return WAR.get(WAR_COMMANDS.get(message))
+        _, content = self.group_message
+        content = content.lower()
+        if content == REGROUP:
+            return content
+        return WAR.get(WAR_COMMANDS.get(content))
 
     @property
     def equipment(self):
@@ -57,6 +58,8 @@ class Updater(object):
 
             elif entity.id == SUPERGROUP_ID:
                 self.chats['group'] = entity
+
+            # self.client.get_message(entity, False)
 
         return True
 
@@ -85,7 +88,7 @@ class Updater(object):
                                  markdown=True,
                                  no_web_page=True)
 
-    def update(self, message=None, sleep=5, wind=None):
+    def update(self, text=None, sleep=5, wind=None):
         """
         Отправляет сообщение Боту и 7 раз спит, ожидая новый ответ.
         Возвращает True, если был получен новый ответ, и капча пройдена;
@@ -94,8 +97,8 @@ class Updater(object):
         sleep: число секунд — пауза после отправки сообщения
         wind: строка-сообщение для вывода в случае ветра, по умолчанию None
         """
-        if message:
-            self.send_message("cw", message)
+        if text:
+            self.send_message("cw", text)
             self.logger.sleep(sleep)
 
         for i in range(1, 7):
@@ -110,7 +113,7 @@ class Updater(object):
                 # Ветер
                 if "завывает" in self.message:
                     if wind is None:
-                        wind = "отправку «{}»".format(message)
+                        wind = "отправку «{}»".format(text)
 
                     self.logger.log_sexy(WIND, wind + "! :(")
                     return False
