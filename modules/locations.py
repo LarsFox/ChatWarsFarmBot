@@ -6,18 +6,23 @@ import random
 import time
 
 
+from bot.data import WOODS, CAVE, SHORE
+from sessions import CAVE_LEVEL, CAVE_CHANCE
+
+
 class Location(object):
-    """
-    Локация
-    console: название в консоли
-    command: любое значение, на которое будет ориентироваться .emoji
-    instant: требует ли выполнение команды времени
-    after: время, через которое поход в локацию будет доступен
-    """
-    def __init__(self, console, command, instant):
+    """ Локация, любое место в игре, куда можем отправиться """
+    def __init__(self, console, command, instant, prob):
+        """
+        console: название в консоли
+        command: любое значение, на которое будет ориентироваться .emoji
+        instant: требует ли выполнение команды времени
+        after: время, через которое поход в локацию будет доступен
+        """
         self.console = console
         self.command = command
         self.instant = instant
+        self.prob = prob
         self.after = 0
 
     def postpone(self):
@@ -26,18 +31,21 @@ class Location(object):
         self.after = time.time() + seconds
         return seconds / 60
 
-    def travel(self, prob=0.7):
+    @property
+    def travel(self):
         """ Определяет, идем или не идем в локацию """
-        if self.instant:
-            if random.random() < prob:
-                return True
-            return False
-        return True
+        if random.random() < self.prob:
+            return True
+        return False
 
     @property
     def emoji(self):
         """ Возвращает команду, по которой осуществляется поход в локацию """
         return self.command
+
+    def update(self, level, available):
+        """ Метод обновления для перезаписи """
+        pass
 
 
 class Random(Location):
@@ -46,6 +54,33 @@ class Random(Location):
     def emoji(self):
         """ Одна из случайных команд """
         return random.choice(self.command)
+
+
+class Adventures(Location):
+    """ Локация для всех приключений """
+    def __init__(self, console, command, instant, prob):
+        super().__init__(console, command, instant, prob)
+        self.level = False
+        self.available = []
+
+    @property
+    def emoji(self):
+        if SHORE in self.available:
+            return SHORE
+
+        if CAVE in self.available:
+            if self.level >= CAVE_LEVEL and random.random() < CAVE_CHANCE:
+                return CAVE
+
+        if WOODS in self.available:
+            return WOODS
+
+        return "/inv"
+
+    def update(self, level, available):
+        """ Обновляет параметры, от которых зависит выбор локации """
+        self.level = level
+        self.available = [c for c in self.command if c in available]
 
 
 RANDOM_COMMANDS = [
@@ -57,12 +92,18 @@ RANDOM_COMMANDS = [
     # "/trades"
 ]
 
+ADVENTURES = [
+    WOODS,
+    CAVE,
+    SHORE,
+    # CARAVANS,
+]
+
 LOCATIONS = [
-    Location("запрос героя", "🏅Герой", True),
-    Location("визит в замок", "🏰Замок", True),
-    Location("поход в пещеру", "🕸Пещера", False),
-    Location("поход в лес", "🌲Лес", False),
-    Random("случайную команду", RANDOM_COMMANDS, True),
-    # 'arena': Location("поход на арену", "(!)", False),
-    # 'build': Location("поход на стройку", "/build_(!)", False),
+    Location("запрос героя", "🏅Герой", True, 0.7),
+    Location("визит в замок", "🏰Замок", True, 0.6),
+    Adventures("поход", ADVENTURES, False, 1),
+    Random("случайную команду", RANDOM_COMMANDS, True, 0.7),
+    # (!) 'arena': Location("поход на арену", "(!)", False),
+    # (!) 'build': Location("поход на стройку", "/build_(!)", False),
 ]

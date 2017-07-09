@@ -80,10 +80,6 @@ class Main(object):
             if not params:
                 continue
 
-            # Без одежды не запускаем
-            if "equip" not in params:
-                continue
-
             worker = mp.Process(target=self.launch_user,
                                 args=(user, params))
 
