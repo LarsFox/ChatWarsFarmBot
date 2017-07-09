@@ -7,8 +7,8 @@ import sys
 import time
 
 import telethon
-from telethon.tl.functions.messages import ReadHistoryRequest
-from telethon.utils import get_input_peer
+# from telethon.tl.functions.messages import ReadHistoryRequest
+# from telethon.utils import get_input_peer
 
 from sessions import API_ID, API_HASH
 
@@ -20,6 +20,7 @@ class TelethonClient(telethon.TelegramClient):
         super().__init__("sessions/" + user, API_ID, API_HASH)
         self.user = user
         self.phone = phone
+        self.user_id = 0
 
     def connect_with_code(self):
         """ Подключается к Телеграму и запрашивает код """
@@ -40,18 +41,21 @@ class TelethonClient(telethon.TelegramClient):
             # Выходим, чтобы запросить код в следующей сессии
             sys.exit("{} код получил, перезапускай.".format(self.user))
 
+        self.user_id = self.get_me().id
+
+    '''
     def read_messages(self, entity, messages):
         """ Отправляет уведомление о прочтении сообщений """
         max_id = max(msg.id for msg in messages)
         return self.invoke(ReadHistoryRequest(peer=get_input_peer(entity), max_id=max_id))
-
+    '''
 
     def get_message(self, entity, repeat=True):
         """
         Собирает последнее сообщение
         entity: адресат-entity
         repeat: повторяем сбор, пока не получим сообщение от адресата
-        Возвращаем номер сообщения и его содержимое
+        Возвращает сообщение и его содержимое
         """
         _, messages, senders = self.get_message_history(entity, 10)
 
@@ -63,7 +67,7 @@ class TelethonClient(telethon.TelegramClient):
                 _, messages, senders = self.get_message_history(entity, 10)
                 time.sleep(3)
 
-        self.read_messages(entity, messages)
+        # self.read_messages(entity, messages)
         message = messages[0]
 
         if getattr(message, 'media', None):
@@ -80,4 +84,4 @@ class TelethonClient(telethon.TelegramClient):
         else:
             content = message.__class__.__name__
 
-        return message.id, content
+        return message, content
