@@ -10,6 +10,13 @@ from bot.data import ATTACK, DEFEND, RIGHT, LEFT, EQUIP, \
                      WAR, GENITIVES, FIGHT
 
 
+def go_wasteland(flag, message):
+    """ Проверяет идти ли в битву в Пустоши """
+    if WAR["Мятный"] in message or WAR["Сумрачный"] in message:
+        return flag in message
+    return True
+
+
 def get_equipment(message):
     """ Возвращает словарь с лучшими предметами """
     equip = {LEFT: {ATTACK: 0, DEFEND: 0}, RIGHT: {ATTACK: 0, DEFEND: 0}}

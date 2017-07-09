@@ -16,7 +16,8 @@ from bot.data import COOLDOWN, HERO, HELLO, \
 
 from bot.logger import Logger
 from bot.updater import Updater
-from modules.helpers import get_fight_command, get_level, get_flag
+from modules.helpers import get_fight_command, go_wasteland, \
+                            get_level, get_flag
 from modules.locations import LOCATIONS
 from sessions import CAVE_LEVEL, CAVE_CHANCE
 
@@ -361,7 +362,12 @@ class ChatWarsFarmBot(object):
         """ Помогает друзьям из Супергруппы """
         message, content = self.updater.group_message
 
+        # Не помогаем сами себе
         if message.id == self.client.user_id:
+            return False
+
+        # Не помогаем в Пустошах, если не из Пустошей
+        if not go_wasteland(self.flag, content):
             return False
 
         command = get_fight_command(content)
@@ -379,7 +385,7 @@ class ChatWarsFarmBot(object):
         self.help_other()
 
         self.updater.update()
-        command = get_fight_command(self.updater.message)
+        command = self.flag + get_fight_command(self.updater.message)
 
         if command:
             self.logger.sleep(5, "Монстр! Сплю пять секунд перед дракой")
