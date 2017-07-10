@@ -65,7 +65,7 @@ class Adventures(Location):
 
     @property
     def emoji(self):
-        # Побережь перестало быть интересным
+        # Побережье перестало быть интересным
         # if SHORE in self.available:
         #     return SHORE
 

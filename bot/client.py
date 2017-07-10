@@ -27,7 +27,7 @@ class TelethonClient(telethon.TelegramClient):
         # Подключаемся к Телеграму
         self.connect()
 
-        # Если ТГ просит код, вводим его и умираем
+        # Если Телеграм просит код, вводим его и умираем
         # Если много аккаунтов, запускаем через -l
         if not self.is_user_authorized():
             print('Первый запуск. Запрашиваю код...')
@@ -39,7 +39,7 @@ class TelethonClient(telethon.TelegramClient):
                 code_ok = self.sign_in(self.phone, code)
 
             # Выходим, чтобы запросить код в следующей сессии
-            sys.exit("{} код получил, перезапускай.".format(self.user))
+            sys.exit("Код верный! Перезапускай {}.".format(self.user))
 
         self.user_id = self.get_me().id
 

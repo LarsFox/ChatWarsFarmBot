@@ -58,6 +58,7 @@ class Main(object):
             user = self.users[0]
             params = SESSIONS.get(user)
             bot = ChatWarsFarmBot(user, params, self.silent)
+            bot.connect()
             sys.exit("Код уже был введен!")
 
         # -c
@@ -114,8 +115,9 @@ class Main(object):
                 bot.logger.log("Ошибка: " + str(err))
                 time.sleep(60*r.random())
 
-            except telethon.errors.RPCError:
+            except telethon.errors.RPCError as err:
                 bot.logger.log("Ошибка РПЦ, посплю немного")
+                bot.logger.log(err)
                 time.sleep(60*r.random())
 
             except telethon.errors.BadMessageError:
