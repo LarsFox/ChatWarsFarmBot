@@ -113,16 +113,19 @@ class Main(object):
 
             except OSError as err:
                 bot.logger.log("Ошибка: " + str(err))
-                time.sleep(60*r.random())
+                time.sleep(60 * r.random())
 
             except telethon.errors.RPCError as err:
-                bot.logger.log("Ошибка РПЦ, посплю немного")
-                bot.logger.log(err)
-                time.sleep(60*r.random())
+                bot.logger.log("Ошибка РПЦ: " + str(err))
+                time.sleep(60 * r.random())
 
             except telethon.errors.BadMessageError:
                 bot.logger.log("Плохое сообщение, немного посплю")
                 time.sleep(120 + 60*r.random())
+
+            except Exception as err:
+                bot.updater.send_group(str(err))
+                raise err
 
             self.reboots[user] = True
 
