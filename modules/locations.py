@@ -65,8 +65,9 @@ class Adventures(Location):
 
     @property
     def emoji(self):
-        if SHORE in self.available:
-            return SHORE
+        # Побережь перестало быть интересным
+        # if SHORE in self.available:
+        #     return SHORE
 
         if CAVE in self.available:
             if self.level >= CAVE_LEVEL and random.random() < CAVE_CHANCE:
