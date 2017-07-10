@@ -235,8 +235,8 @@ class ChatWarsFarmBot(object):
 
         # Обновляем информацию у Пингвина
         if self.level >= 15:
-            self.updater.send_penguin()
             self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
+            self.updater.send_penguin()
 
         # Забываем боевой статус и приказ
         self.order = None
@@ -390,16 +390,16 @@ class ChatWarsFarmBot(object):
         self.help_other()
 
         self.updater.update()
-        command = ' ' + get_fight_command(self.updater.message)
+        command = get_fight_command(self.updater.message)
 
         if command:
             self.logger.sleep(5, "Монстр! Сплю пять секунд перед дракой")
             self.updater.update(command)
 
             if emoji == SHORE:
-                self.updater.send_group(self.flag + SHORE + "!" + command)
+                self.updater.send_group(self.flag + SHORE + "! " + command)
             else:
-                self.updater.send_group(self.flag + command)
+                self.updater.send_group(self.flag + ' ' + command)
 
         return True
 

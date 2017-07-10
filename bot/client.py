@@ -28,7 +28,7 @@ class TelethonClient(telethon.TelegramClient):
         self.connect()
 
         # Если Телеграм просит код, вводим его и умираем
-        # Если много аккаунтов, запускаем через -l
+        # Каждый отдельный аккаунт запускаем через -l
         if not self.is_user_authorized():
             print('Первый запуск. Запрашиваю код...')
             self.send_code_request(self.phone)
