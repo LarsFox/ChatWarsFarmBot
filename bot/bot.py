@@ -363,7 +363,7 @@ class ChatWarsFarmBot(object):
         message, content = self.updater.group_message
 
         # Не помогаем сами себе
-        if message.id == self.client.user_id:
+        if message.from_id == self.client.user_id:
             return False
 
         # Не помогаем на побережье, если не контролируем побережье
