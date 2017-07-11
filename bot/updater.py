@@ -76,16 +76,18 @@ class Updater(object):
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
         _, message = self.client.get_message(self.chats["trade_bot"])
-        self.send_message("penguin", message)
+        self.send_message("penguin", message, markdown=False)
         return True
 
-    def send_message(self, entity_key, message):
-        """ Отправляет сообщение с Маркдауном и без предпросмотра
+    def send_message(self, entity_key, message, markdown=True):
+        """ Отправляет сообщение без предпросмотра
         entity_key: ключ, под которым записан адресат-entity
-        message: текст сообщения """
+        message: текст сообщения
+        markdown: использовать ли Маркдаун
+        """
         self.client.send_message(self.chats[entity_key],
                                  message,
-                                 markdown=True,
+                                 markdown=markdown,
                                  no_web_page=True)
 
     def update(self, text=None, sleep=5, wind=None):
