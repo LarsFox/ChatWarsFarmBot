@@ -177,7 +177,7 @@ class ChatWarsFarmBot(object):
             # Нападение на союзника! Сидим дома
             if "защите" in self.updater.message:
                 self.logger.log("Не могу атаковать союзника")
-                self.defend()
+                self.equip(DEFEND)
                 self.status = ALLY  # не защита, но и атаковать не надо
 
             # Атака! Одеваемся и выходим к бою
