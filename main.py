@@ -125,6 +125,7 @@ class Main(object):
 
             except Exception as err:
                 bot.updater.send_group(str(err))
+                bot.logger.log(str(err))
                 raise err
 
             self.reboots[user] = True
