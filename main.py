@@ -128,7 +128,8 @@ class Main(object):
                 bot.logger.log(str(err))
                 raise err
 
-            self.reboots[user] = True
+            finally:
+                self.reboots[user] = True
 
 
 if __name__ == '__main__':
