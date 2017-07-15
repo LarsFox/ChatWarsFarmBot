@@ -11,7 +11,7 @@ from bot.data import ATTACK, DEFEND, RIGHT, LEFT, EQUIP, \
 
 
 def go_wasteland(flag, message):
-    """ Проверяет идти ли в битву в Пустоши """
+    """ Проверяет, идти ли в битву в Пустоши """
     if WAR["Мятный"] in message or WAR["Сумрачный"] in message:
         return flag in message
     return True

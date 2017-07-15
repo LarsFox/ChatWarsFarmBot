@@ -6,12 +6,11 @@
 
 import multiprocessing as mp
 import random as r
-import time
 import sys
-
+import time
+import traceback
 
 import telethon
-
 
 from bot.bot import ChatWarsFarmBot
 from sessions import SESSIONS
@@ -124,8 +123,13 @@ class Main(object):
                 time.sleep(120 + 60*r.random())
 
             except Exception as err:
-                bot.updater.send_group(str(err))
-                bot.logger.log(str(err))
+                _, _, exc_traceback = sys.exc_info()
+                exc = traceback.format_tb(exc_traceback)
+
+                for item in exc:
+                    bot.updater.send_group(item)
+                    bot.logger.log(item)
+
                 raise err
 
             finally:
