@@ -1,9 +1,6 @@
 *.pyc
 *.log
-*.bat
-*.sh
 *.session
-*.txt
-bin/*.*
+
+bin
 sessions.py
-test.py
