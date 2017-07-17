@@ -177,7 +177,13 @@ class ChatWarsFarmBot(object):
             # Нападение на союзника! Сидим дома
             if "защите" in self.updater.message:
                 self.logger.log("Не могу атаковать союзника")
-                self.equip(DEFEND)
+
+                # Форт остаемся защищать, а вот союзников не защищаем, ну их
+                if "форт" in self.order:
+                    self.equip(DEFEND)
+                else:
+                    self.defend()
+
                 self.status = ALLY  # не защита, но и атаковать не надо
 
             # Атака! Одеваемся и выходим к бою
