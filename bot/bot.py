@@ -218,6 +218,8 @@ class ChatWarsFarmBot(object):
         if not self.updater.update("/report"):
             return False
 
+        self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
+
         # Оповещаем Супергруппу о полученном приказе
         verb = VERBS[self.logger.girl][self.status]
         self.updater.send_group(verb + self.order)
@@ -235,7 +237,6 @@ class ChatWarsFarmBot(object):
 
         # Обновляем информацию у Пингвина
         if self.level >= 15:
-            self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
             self.updater.send_penguin()
 
         # Забываем боевой статус и приказ
