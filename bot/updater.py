@@ -63,12 +63,12 @@ class Updater(object):
 
         return True
 
-    def send_group(self, message):
+    def send_group(self, message, markdown=True):
         """
         Отправляет сообщение Супергруппе
         message: строка-текст сообщения с Маркдауном
         """
-        self.send_message("group", message)
+        self.send_message("group", message, markdown)
 
     def send_penguin(self):
         """ Отправляет инвентарь Пингвину """
@@ -158,4 +158,4 @@ class Updater(object):
         """ Останавливает бота """
         self.send_group("У меня тут проблема")
         self.send_group(self.message)
-        sys.exit()  # (!) проверить, выключаются ли все боты или один
+        sys.exit()

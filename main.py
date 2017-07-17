@@ -123,12 +123,13 @@ class Main(object):
                 time.sleep(120 + 60*r.random())
 
             except Exception as err:
-                _, _, exc_traceback = sys.exc_info()
-                exc = traceback.format_tb(exc_traceback)
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                exc = traceback.format_exception(exc_type,
+                                                 exc_value, exc_traceback)
 
-                for item in exc:
-                    bot.updater.send_group(item)
-                    bot.logger.log(item)
+                text = ''.join(exc)
+                bot.updater.send_group(text)
+                bot.logger.log(text)
 
                 raise err
 

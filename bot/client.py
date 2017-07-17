@@ -57,18 +57,28 @@ class TelethonClient(telethon.TelegramClient):
         repeat: повторяем сбор, пока не получим сообщение от адресата
         Возвращает сообщение и его содержимое
         """
-        _, messages, senders = self.get_message_history(entity, 10)
+        msgs, sndrs = [], []
 
-        if repeat:
-            for _ in range(15):
-                if senders[0].id == entity.id:
-                    break
+        for _ in range(5):
+            if msgs:
+                break
 
-                _, messages, senders = self.get_message_history(entity, 10)
-                time.sleep(3)
+            try:
+                _, msgs, sndrs = self.get_message_history(entity, 10)
 
-        # self.read_messages(entity, messages)
-        message = messages[0]
+                if repeat:
+                    for _ in range(15):
+                        if sndrs[0].id == entity.id:
+                            break
+
+                        _, msgs, sndrs = self.get_message_history(entity, 10)
+                        time.sleep(3)
+
+            except AttributeError:
+                time.sleep(5)
+
+        # self.read_messages(entity, msgs)
+        message = msgs[0]
 
         if getattr(message, 'media', None):
             content = '<{}> {}'.format(
