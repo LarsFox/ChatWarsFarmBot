@@ -220,11 +220,11 @@ class ChatWarsFarmBot(object):
         if self.status is None:
             return False
 
+        self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
+
         # Бот игры еще не проснулся, пропускаем
         if not self.updater.update("/report"):
             return False
-
-        self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
 
         # Оповещаем Супергруппу о полученном приказе
         verb = VERBS[self.logger.girl][self.status]
