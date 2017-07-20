@@ -84,11 +84,33 @@ class ChatWarsFarmBot(object):
 
     # Системные функции
 
+    def direct(self):
+        """ Получает команду от группы в формате:
+        user: command
+        После чего отправляет command боту и возвращает ответ """
+        message = self.updater.group_message
+        if not message.startswith(self.logger.user):
+            return False
+
+        # Отделяем команду через двоеточие с пробелом
+        parts = message.split(": ")
+        if len(parts) != 2:
+            return False
+
+        # Отправляем команду и возвращаем ответ
+        command = parts[1]
+        self.updater.update(command)
+        self.updater.send_group(self.updater.bot_message)
+        return True
+
     def start(self):
         """ Запускает бота """
         while True:
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
+
+            # Прямое управление
+            self.direct()
 
             # Защищаем КОРОВАНЫ
             self.caravan()
