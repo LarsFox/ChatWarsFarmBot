@@ -88,8 +88,8 @@ class ChatWarsFarmBot(object):
         """ Получает команду от группы в формате:
         user: command
         После чего отправляет command боту и возвращает ответ """
-        message = self.updater.group_message
-        if not message.startswith(self.logger.user):
+        _, content = self.updater.group_message
+        if not content.startswith(self.logger.user):
             return False
 
         # Отделяем команду через двоеточие с пробелом
