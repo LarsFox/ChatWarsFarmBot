@@ -97,9 +97,15 @@ class Main(object):
         while True:
             bot = ChatWarsFarmBot(user, params, self.silent)
 
+            # Ошибку при первичном подключении обрабатываем отдельно
             try:
                 bot.connect()
+            except (ValueError, telethon.errors.RPCError) as err:
+                bot.logger.log("Не могу подключиться, немного посплю")
+                time.sleep(120 + 60*r.random())
+                continue
 
+            try:
                 # Перезагружаем и откладываем все действия
                 if self.reboots[user]:
                     for location in bot.locations:

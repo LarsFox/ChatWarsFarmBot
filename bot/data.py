@@ -93,7 +93,7 @@ EQUIP = {
         112: {ATTACK: 1, DEFEND: 0},    # кухонный нож
         113: {ATTACK: 3, DEFEND: 0},    # боевой нож
         114: {ATTACK: 7, DEFEND: 0},    # кинжал
-        213: {ATTACK: 9, DEFEND: 5},    # клещи
+        123: {ATTACK: 9, DEFEND: 5},    # клещи
         212: {ATTACK: 0, DEFEND: 1},    # деревянный щит
         213: {ATTACK: 0, DEFEND: 2},    # щит скелета
         214: {ATTACK: 0, DEFEND: 3},    # бронзовый щит

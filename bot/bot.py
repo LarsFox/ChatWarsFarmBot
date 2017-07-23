@@ -93,7 +93,7 @@ class ChatWarsFarmBot(object):
             return False
 
         # Отделяем команду через двоеточие с пробелом
-        parts = message.split(": ")
+        parts = content.split(": ")
         if len(parts) != 2:
             return False
 
