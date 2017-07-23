@@ -88,8 +88,9 @@ class TelethonClient(telethon.TelegramClient):
         elif hasattr(message, 'message'):
             content = message.message
 
+        # (!) разобраться с содержанием сообщения
         elif hasattr(message, 'action'):
-            content = message.action.encode('utf-8')
+            content = ""  # message.action.encode('utf-8')
 
         else:
             content = message.__class__.__name__
