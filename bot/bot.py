@@ -100,7 +100,9 @@ class ChatWarsFarmBot(object):
         # Отправляем команду и возвращаем ответ
         command = parts[1]
         self.updater.update(command)
-        self.updater.send_group(self.updater.bot_message)
+
+        _, reply = self.updater.bot_message
+        self.updater.send_group(reply)
         return True
 
     def start(self):
