@@ -89,7 +89,8 @@ class ChatWarsFarmBot(object):
         user: command
         После чего отправляет command боту и возвращает ответ """
         _, content = self.updater.group_message
-        if not content.startswith(self.logger.user):
+        if not (content.startswith(self.logger.user)
+                and content.startswith(REGROUP)):
             return False
 
         # Отделяем команду через двоеточие с пробелом
@@ -102,7 +103,7 @@ class ChatWarsFarmBot(object):
         self.updater.update(command)
 
         _, reply = self.updater.bot_message
-        self.updater.send_group(reply)
+        self.updater.send_group(reply, markdown=False)
         return True
 
     def start(self):
@@ -111,15 +112,17 @@ class ChatWarsFarmBot(object):
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
-            # Прямое управление
-            self.direct()
-
             # Защищаем КОРОВАНЫ
             self.caravan()
 
+            # Прямое управление
+            direct_fight = False
+            direct_fight = self.direct()
+
             # Смотрим, кому можем помочь
             # Есть вероятность, что никто не поможет
-            self.help_other()
+            if direct_fight:
+                self.help_other()
 
             # С 47-й минуты готовимся к бою
             if (now.hour) % 4 == 0 and now.minute >= 47:
