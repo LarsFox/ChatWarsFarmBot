@@ -29,13 +29,7 @@ class Updater(object):
     @property
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
-<<<<<<< HEAD
-        message, content = self.client.get_message(self.chats["group"],
-                                                   last=False)
-        return message, content
-=======
         return self.client.get_message(self.chats["group"], False)
->>>>>>> Alpha
 
     @property
     def order(self):
@@ -81,13 +75,8 @@ class Updater(object):
         self.send_message("trade_bot", "/start")
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
-<<<<<<< HEAD
         _, content = self.client.get_message(self.chats["trade_bot"])
-        self.send_message("penguin", content)
-=======
-        _, message = self.client.get_message(self.chats["trade_bot"])
-        self.send_message("penguin", message, markdown=False)
->>>>>>> Alpha
+        self.send_message("penguin", content, markdown=False)
         return True
 
     def send_message(self, entity_key, message, markdown=True):
@@ -169,13 +158,4 @@ class Updater(object):
         """ Останавливает бота """
         self.send_group("У меня тут проблема")
         self.send_group(self.message)
-<<<<<<< HEAD
-        sys.exit()  # (!) проверить, выключаются ли все боты или один
-
-    def read_all_messages(self):
-        """ Проводит запрос последних сообщений и читает их """
-        for entity in self.chats.values():
-            self.client.get_message(entity, last=False)
-=======
         sys.exit()
->>>>>>> Alpha
