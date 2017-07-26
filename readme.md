@@ -1,6 +1,10 @@
 A spamming-farming bot for multiple accounts in a Telegram RPG
 
+<<<<<<< HEAD
 Everything is in Russian, since the game is available in Russian only!
+=======
+Everything is in Russian, since the game is available in Russian only.
+>>>>>>> Alpha
 
 First launch with `python3 main.py session1 -l` then with `session2`, until all of your accounts receive code and connect.
 After that start with `python3 main.py separating sessions with spaces -s -r` to have them rebooted and silenced.

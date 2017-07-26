@@ -8,6 +8,10 @@ import time
 from sessions import CAVE_LEVEL, CAVE_CHANCE
 
 
+from bot.data import WOODS, CAVE, SHORE
+from sessions import CAVE_LEVEL, CAVE_CHANCE
+
+
 class Location(object):
     """ Локация, любое место в игре, куда можем отправиться """
     def __init__(self, console, command, instant, prob):
@@ -41,6 +45,10 @@ class Location(object):
         """ Возвращает команду, по которой осуществляется поход в локацию """
         return self.command
 
+    def update(self, level, available):
+        """ Метод обновления для перезаписи """
+        pass
+
 
 class Random(Location):
     """ Локация, в которой ходим по случайной команде """
@@ -59,8 +67,9 @@ class Adventures(Location):
 
     @property
     def emoji(self):
-        if SHORE in self.available:
-            return SHORE
+        # Побережье перестало быть интересным
+        # if SHORE in self.available:
+        #     return SHORE
 
         if CAVE in self.available:
             if self.level >= CAVE_LEVEL and random.random() < CAVE_CHANCE:
@@ -86,12 +95,6 @@ RANDOM_COMMANDS = [
     # "/trades"
 ]
 
-QUESTS = "🗺 Квесты"
-WOODS = "🌲Лес"
-CAVE = "🕸Пещера"
-SHORE = "🏝Побережье"
-# CARAVANS = "🐫Грабить Корованы"
-
 ADVENTURES = [
     WOODS,
     CAVE,
@@ -101,7 +104,7 @@ ADVENTURES = [
 
 LOCATIONS = [
     Location("запрос героя", "🏅Герой", True, 0.7),
-    Location("визит в замок", "🏰Замок", True, 0.6),
+    Location("визит в замок", "🏰Замок", True, 0.6),
     Adventures("поход", ADVENTURES, False, 1),
     Random("случайную команду", RANDOM_COMMANDS, True, 0.7),
     # (!) 'arena': Location("поход на арену", "(!)", False),

@@ -1,6 +1,8 @@
 *.pyc
 *.log
 *.session
-bin/*.*
+
+bin
 sessions.py
-test.py
+
+.vscode

@@ -29,9 +29,13 @@ class Updater(object):
     @property
     def group_message(self):
         """ Последнее сообщение от Супергруппы """
+<<<<<<< HEAD
         message, content = self.client.get_message(self.chats["group"],
                                                    last=False)
         return message, content
+=======
+        return self.client.get_message(self.chats["group"], False)
+>>>>>>> Alpha
 
     @property
     def order(self):
@@ -61,33 +65,40 @@ class Updater(object):
             elif entity.id == SUPERGROUP_ID:
                 self.chats['group'] = entity
 
-            self.client.get_message(entity, last=False)
+            # self.client.get_message(entity, False)
 
         return True
 
-    def send_group(self, message):
+    def send_group(self, message, markdown=True):
         """
         Отправляет сообщение Супергруппе
         message: строка-текст сообщения с Маркдауном
         """
-        self.send_message("group", message)
+        self.send_message("group", message, markdown)
 
     def send_penguin(self):
         """ Отправляет инвентарь Пингвину """
         self.send_message("trade_bot", "/start")
         self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
+<<<<<<< HEAD
         _, content = self.client.get_message(self.chats["trade_bot"])
         self.send_message("penguin", content)
+=======
+        _, message = self.client.get_message(self.chats["trade_bot"])
+        self.send_message("penguin", message, markdown=False)
+>>>>>>> Alpha
         return True
 
-    def send_message(self, entity_key, message):
-        """ Отправляет сообщение с Маркдауном и без предпросмотра
+    def send_message(self, entity_key, message, markdown=True):
+        """ Отправляет сообщение без предпросмотра
         entity_key: ключ, под которым записан адресат-entity
-        message: текст сообщения """
+        message: текст сообщения
+        markdown: использовать ли Маркдаун
+        """
         self.client.send_message(self.chats[entity_key],
                                  message,
-                                 markdown=True,
+                                 markdown=markdown,
                                  no_web_page=True)
 
     def update(self, text=None, sleep=5, wind=None):
@@ -158,9 +169,13 @@ class Updater(object):
         """ Останавливает бота """
         self.send_group("У меня тут проблема")
         self.send_group(self.message)
+<<<<<<< HEAD
         sys.exit()  # (!) проверить, выключаются ли все боты или один
 
     def read_all_messages(self):
         """ Проводит запрос последних сообщений и читает их """
         for entity in self.chats.values():
             self.client.get_message(entity, last=False)
+=======
+        sys.exit()
+>>>>>>> Alpha

@@ -7,6 +7,8 @@ import sys
 import time
 
 import telethon
+# from telethon.tl.functions.messages import ReadHistoryRequest
+# from telethon.utils import get_input_peer
 
 from sessions import API_ID, API_HASH
 
@@ -18,6 +20,7 @@ class TelethonClient(telethon.TelegramClient):
         super().__init__("sessions/" + user, API_ID, API_HASH)
         self.user = user
         self.phone = phone
+        self.user_id = 0
 
         self.user_id = 0
 
@@ -42,38 +45,47 @@ class TelethonClient(telethon.TelegramClient):
 
         self.user_id = self.get_me().id
 
+    '''
+    def read_messages(self, entity, messages):
+        """ Отправляет уведомление о прочтении сообщений """
+        max_id = max(msg.id for msg in messages)
+        return self.invoke(ReadHistoryRequest(peer=get_input_peer(entity), max_id=max_id))
+    '''
+
     def get_message(self, entity, last=True, read=True):
         """
         Собирает последнее сообщение
         entity: адресат-entity
-        last: повторяем сбор, пока последнее сообщение не от адресата
-        read: отправляем сообщение о прочтении
-        Возвращает сообщение и его содержимое для отображения
+        repeat: повторяем сбор, пока не получим сообщение от адресата
+        Возвращает сообщение и его содержимое
         """
-        _, messages, senders = self.get_message_history(entity, 7)
+        msgs, sndrs = [], []
 
-        # Если есть отправители (не канал)
-        if senders:
-            # Отправляем уведомления, что мы прочитали сообщение
-            if read:
-                for i, sender in enumerate(senders):
-                    if sender.id != self.user_id:
-                        self.send_read_acknowledge(sender, messages[i])
+        # if read:
+        #     for i, sender in enumerate(senders):
+        #         if sender.id != self.user_id:
+        #             self.send_read_acknowledge(sender, messages[i])
 
-            # Ждем, пока последним сообщением не будет ответ не от нас
-            if last:
-                for _ in range(15):
-                    if senders[0].id != self.user_id:
-                        break
+        for _ in range(5):
+            if msgs:
+                break
 
-                    _, messages, senders = self.get_message_history(entity, 7)
-                    time.sleep(3)
+            try:
+                _, msgs, sndrs = self.get_message_history(entity, 10)
 
-            # Возвращаем пустой набор, если сообщений так и не было
-            if not messages:
-                return 0, None
+                if repeat:
+                    for _ in range(15):
+                        if sndrs[0].id == entity.id:
+                            break
 
-        message = messages[0]
+                        _, msgs, sndrs = self.get_message_history(entity, 10)
+                        time.sleep(3)
+
+            except AttributeError:
+                time.sleep(5)
+
+        # self.read_messages(entity, msgs)
+        message = msgs[0]
 
         if getattr(message, 'media', None):
             content = '<{}> {}'.format(
@@ -83,8 +95,9 @@ class TelethonClient(telethon.TelegramClient):
         elif hasattr(message, 'message'):
             content = message.message
 
+        # (!) разобраться с содержанием сообщения
         elif hasattr(message, 'action'):
-            content = message.action
+            content = ""  # message.action.encode('utf-8')
 
         else:
             content = message.__class__.__name__

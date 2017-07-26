@@ -12,12 +12,14 @@ import time
 from bot.client import TelethonClient
 from bot.data import COOLDOWN, HERO, HELLO, \
                      ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP, \
-                     CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM
+                     CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, \
+                     QUESTS, SHORE
 
 from bot.logger import Logger
 from bot.updater import Updater
-from modules.helpers import get_fight_command, get_level, get_flag
-from modules.locations import LOCATIONS, QUESTS, SHORE
+from modules.helpers import get_fight_command, go_wasteland, \
+                            get_level, get_flag
+from modules.locations import LOCATIONS
 
 
 class ChatWarsFarmBot(object):
@@ -70,7 +72,7 @@ class ChatWarsFarmBot(object):
         # Определяем флаг и уровень
         updated = self.updater.update("/hero")
         while not updated:
-            self.logger.sleep(300, "Проблемы при пробуждении, посплю еще немного!")
+            self.logger.sleep(300, "Не могу проснуться, посплю еще немного!")
             updated = self.updater.update("/hero")
 
         self.flag = get_flag(self.updater.message)     # флаг в виде смайлика
@@ -82,6 +84,28 @@ class ChatWarsFarmBot(object):
 
     # Системные функции
 
+    def direct(self):
+        """ Получает команду от группы в формате:
+        user: command
+        После чего отправляет command боту и возвращает ответ """
+        _, content = self.updater.group_message
+        if not (content.startswith(self.logger.user)
+                and content.startswith(REGROUP)):
+            return False
+
+        # Отделяем команду через двоеточие с пробелом
+        parts = content.split(": ")
+        if len(parts) != 2:
+            return False
+
+        # Отправляем команду и возвращаем ответ
+        command = parts[1]
+        self.updater.update(command)
+
+        _, reply = self.updater.bot_message
+        self.updater.send_group(reply, markdown=False)
+        return True
+
     def start(self):
         """ Запускает бота """
         while True:
@@ -91,9 +115,14 @@ class ChatWarsFarmBot(object):
             # Защищаем КОРОВАНЫ
             self.caravan()
 
+            # Прямое управление
+            direct_fight = False
+            direct_fight = self.direct()
+
             # Смотрим, кому можем помочь
             # Есть вероятность, что никто не поможет
-            self.help_other()
+            if direct_fight:
+                self.help_other()
 
             # С 47-й минуты готовимся к бою
             if (now.hour) % 4 == 0 and now.minute >= 47:
@@ -177,7 +206,13 @@ class ChatWarsFarmBot(object):
             # Нападение на союзника! Сидим дома
             if "защите" in self.updater.message:
                 self.logger.log("Не могу атаковать союзника")
-                self.defend()
+
+                # Форт остаемся защищать, а вот союзников не защищаем, ну их
+                if "форт" in self.order:
+                    self.equip(DEFEND)
+                else:
+                    self.defend()
+
                 self.status = ALLY  # не защита, но и атаковать не надо
 
             # Атака! Одеваемся и выходим к бою
@@ -214,6 +249,8 @@ class ChatWarsFarmBot(object):
         if self.status is None:
             return False
 
+        self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
+
         # Бот игры еще не проснулся, пропускаем
         if not self.updater.update("/report"):
             return False
@@ -236,7 +273,6 @@ class ChatWarsFarmBot(object):
         # Обновляем информацию у Пингвина
         if self.level >= 15:
             self.updater.send_penguin()
-            self.logger.sleep(random.random() * 180, "Сон рассинхронизации!")
 
         # Забываем боевой статус и приказ
         self.order = None
@@ -362,14 +398,20 @@ class ChatWarsFarmBot(object):
         """ Помогает друзьям из Супергруппы """
         message, content = self.updater.group_message
 
+        # Не помогаем сами себе
         if message.from_id == self.client.user_id:
             return False
 
+        # Не помогаем на побережье, если не контролируем побережье
         if SHORE in content:
-            if self.flag not in message:
+            if self.flag not in content:
                 return False
 
-        command = get_fight_command(message)
+        # Не помогаем в Пустошах, если не из Пустошей
+        if not go_wasteland(self.flag, content):
+            return False
+
+        command = get_fight_command(content)
 
         if command:
             self.logger.log("Иду на помощь: {}".format(command))
@@ -393,7 +435,7 @@ class ChatWarsFarmBot(object):
             if emoji == SHORE:
                 self.updater.send_group(self.flag + SHORE + "! " + command)
             else:
-                self.updater.send_group(command)
+                self.updater.send_group(self.flag + ' ' + command)
 
         return True
 

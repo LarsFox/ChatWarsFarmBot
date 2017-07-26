@@ -6,12 +6,11 @@
 
 import multiprocessing as mp
 import random as r
-import time
 import sys
-
+import time
+import traceback
 
 import telethon
-
 
 from bot.bot import ChatWarsFarmBot
 from sessions import SESSIONS
@@ -98,9 +97,15 @@ class Main(object):
         while True:
             bot = ChatWarsFarmBot(user, params, self.silent)
 
+            # Ошибку при первичном подключении обрабатываем отдельно
             try:
                 bot.connect()
+            except (ValueError, telethon.errors.RPCError) as err:
+                bot.logger.log("Не могу подключиться, немного посплю")
+                time.sleep(120 + 60*r.random())
+                continue
 
+            try:
                 # Перезагружаем и откладываем все действия
                 if self.reboots[user]:
                     for location in bot.locations:
@@ -113,18 +118,29 @@ class Main(object):
 
             except OSError as err:
                 bot.logger.log("Ошибка: " + str(err))
-                time.sleep(60*r.random())
+                time.sleep(60 * r.random())
 
             except telethon.errors.RPCError as err:
-                bot.logger.log("Ошибка РПЦ, посплю немного")
-                bot.logger.log(err)
-                time.sleep(60*r.random())
+                bot.logger.log("Ошибка РПЦ: " + str(err))
+                time.sleep(60 * r.random())
 
             except telethon.errors.BadMessageError:
                 bot.logger.log("Плохое сообщение, немного посплю")
                 time.sleep(120 + 60*r.random())
 
-            self.reboots[user] = True
+            except Exception as err:
+                exc_type, exc_value, exc_traceback = sys.exc_info()
+                exc = traceback.format_exception(exc_type,
+                                                 exc_value, exc_traceback)
+
+                text = ''.join(exc)
+                bot.updater.send_group(text)
+                bot.logger.log(text)
+
+                raise err
+
+            finally:
+                self.reboots[user] = True
 
 
 if __name__ == '__main__':
