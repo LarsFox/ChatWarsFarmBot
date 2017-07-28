@@ -373,6 +373,9 @@ class ChatWarsFarmBot(object):
         command: строка после, сообщение, которое будет отправлено
         prefix определяет, проигнориует ли бот команду,
         level определяет минимальный уровень для выполнения команды
+        После отправки команды спит 5.5 минут, поэтому убедись,
+        что никакие другие процессы не будут перекрыты
+        и что последнее сообщение актуально
         """
         args = params.split()
         pre = args[0]
@@ -393,7 +396,7 @@ class ChatWarsFarmBot(object):
 
         self.updater.update(command)
         _, reply = self.updater.bot_message
-        self.logger.sleep(300, "Сон прямого контроля")
+        self.logger.sleep(330, "Сон прямого контроля")
         self.updater.send_group(reply, markdown=False)
 
         return True
