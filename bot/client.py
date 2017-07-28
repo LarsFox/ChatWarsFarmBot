@@ -52,7 +52,7 @@ class TelethonClient(telethon.TelegramClient):
         return self.invoke(ReadHistoryRequest(peer=get_input_peer(entity), max_id=max_id))
     '''
 
-    def get_message(self, entity, last=True, read=True):
+    def get_message(self, entity, repeat=True):
         """
         Собирает последнее сообщение
         entity: адресат-entity

@@ -84,28 +84,6 @@ class ChatWarsFarmBot(object):
 
     # Системные функции
 
-    def direct(self):
-        """ Получает команду от группы в формате:
-        user: command
-        После чего отправляет command боту и возвращает ответ """
-        _, content = self.updater.group_message
-        if not (content.startswith(self.logger.user)
-                and content.startswith(REGROUP)):
-            return False
-
-        # Отделяем команду через двоеточие с пробелом
-        parts = content.split(": ")
-        if len(parts) != 2:
-            return False
-
-        # Отправляем команду и возвращаем ответ
-        command = parts[1]
-        self.updater.update(command)
-
-        _, reply = self.updater.bot_message
-        self.updater.send_group(reply, markdown=False)
-        return True
-
     def start(self):
         """ Запускает бота """
         while True:
@@ -115,14 +93,9 @@ class ChatWarsFarmBot(object):
             # Защищаем КОРОВАНЫ
             self.caravan()
 
-            # Прямое управление
-            direct_fight = False
-            direct_fight = self.direct()
-
             # Смотрим, кому можем помочь
             # Есть вероятность, что никто не поможет
-            if direct_fight:
-                self.help_other()
+            self.help_other()
 
             # С 47-й минуты готовимся к бою
             if (now.hour) % 4 == 0 and now.minute >= 47:
@@ -158,7 +131,7 @@ class ChatWarsFarmBot(object):
                 else:
                     self.logger.sleep(105, "~Сил нет, сплю две минуты", False)
 
-            self.updater.read_all_messages()
+            # self.updater.read_all_messages()
 
         return True
 
@@ -394,6 +367,37 @@ class ChatWarsFarmBot(object):
 
         return True
 
+    def direct_help(self, params, command):
+        """ Отправляет команду, полученную в формате "prefix level: command"
+        params: строка до двоеточия
+        command: строка после, сообщение, которое будет отправлено
+        prefix определяет, проигнориует ли бот команду,
+        level определяет минимальный уровень для выполнения команды
+        """
+        args = params.split()
+        pre = args[0]
+
+        # Отправляем, если сходится имя, замок или вообще все
+        if pre not in (self.flag, self.logger.user, REGROUP):
+            return False
+
+        if len(args) >= 2:
+            try:
+                level = int(args[1])
+                if self.level < level:
+                    return False
+
+            except ValueError:
+                self.logger.log("Ошибка в команде")
+                return False
+
+        self.updater.update(command)
+        _, reply = self.updater.bot_message
+        self.logger.sleep(300, "Сон прямого контроля")
+        self.updater.send_group(reply, markdown=False)
+
+        return True
+
     def help_other(self):
         """ Помогает друзьям из Супергруппы """
         message, content = self.updater.group_message
@@ -401,6 +405,12 @@ class ChatWarsFarmBot(object):
         # Не помогаем сами себе
         if message.from_id == self.client.user_id:
             return False
+
+        parts = content.split(": ")
+        # Отделяем команду через двоеточие с пробелом
+        if len(parts) == 2:
+            self.direct_help(*parts)
+            message, content = self.updater.group_message
 
         # Не помогаем на побережье, если не контролируем побережье
         if SHORE in content:
