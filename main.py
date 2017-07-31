@@ -6,6 +6,7 @@
 
 import multiprocessing as mp
 import random as r
+import resource
 import sys
 import time
 import traceback
@@ -143,6 +144,20 @@ class Main(object):
                 self.reboots[user] = True
 
 
+def memory():
+    """ Ограничивает потребление памяти
+    https://stackoverflow.com/questions/41105733 """
+    _, hard = resource.getrlimit(resource.RLIMIT_AS)
+    resource.setrlimit(resource.RLIMIT_AS, (128 * 1024, hard))
+
+
 if __name__ == '__main__':
-    MAIN = Main()
-    MAIN.launch()
+    memory()
+
+    try:
+        MAIN = Main()
+        MAIN.launch()
+
+    except MemoryError:
+        sys.stderr.write('\n\nERROR: Memory Exception\n')
+        sys.exit(1)
