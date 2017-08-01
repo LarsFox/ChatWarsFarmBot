@@ -395,8 +395,8 @@ class ChatWarsFarmBot(object):
                 return False
 
         self.updater.update(command)
-        _, reply = self.updater.bot_message
         self.logger.sleep(330, "Сон прямого контроля")
+        _, reply = self.updater.bot_message
         self.updater.send_group(reply, markdown=False)
 
         return True
