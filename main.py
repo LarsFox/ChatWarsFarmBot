@@ -69,6 +69,7 @@ class Main(object):
             user = self.users[0]
             params = SESSIONS.get(user)
             bot = ChatWarsFarmBot(user, params, self.silent)
+            bot.connect()
             _, message = bot.client.get_message(bot.updater.chats["telegram"])
             sys.exit(message[:23])
 
@@ -101,7 +102,7 @@ class Main(object):
             # Ошибку при первичном подключении обрабатываем отдельно
             try:
                 bot.connect()
-            except (ValueError, telethon.errors.RPCError) as err:
+            except (ValueError, OSError, telethon.errors.RPCError) as err:
                 bot.logger.log("Не могу подключиться, немного посплю")
                 time.sleep(120 + 60*r.random())
                 continue
