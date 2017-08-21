@@ -395,7 +395,10 @@ class ChatWarsFarmBot(object):
                 return False
 
         self.updater.update(command)
-        self.logger.sleep(330, "Сон прямого контроля")
+
+        if "/repair" in command or "/build" in command:
+            self.logger.sleep(330, "Сон прямого контроля от стройки")
+
         message_id, _ = self.updater.bot_message
         self.updater.forward_bot_to_group(message_id)
 
