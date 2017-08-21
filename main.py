@@ -74,21 +74,17 @@ class Main(object):
             sys.exit(message[:23])
 
         # Остальной набор
-        queue = mp.JoinableQueue()
-
+        jobs = []
         for _, user in enumerate(self.users):
             params = SESSIONS.get(user)
-
             if not params:
                 continue
 
             worker = mp.Process(target=self.launch_user,
                                 args=(user, params))
 
+            jobs.append(worker)
             worker.start()
-            # worker.join()
-
-        queue.join()
 
     def launch_user(self, user, params):
         """

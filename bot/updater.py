@@ -5,6 +5,11 @@
 
 import sys
 
+from telethon.tl.functions.messages.forward_messages import \
+        ForwardMessagesRequest
+from telethon.helpers import generate_random_long
+from telethon.utils import get_input_peer
+
 from bot.data import WAR, WAR_COMMANDS, REGROUP, CHATS, WIND
 from modules.helpers import get_equipment
 from sessions import SUPERGROUP_ID
@@ -159,3 +164,12 @@ class Updater(object):
         self.send_group("У меня тут проблема")
         self.send_group(self.message)
         sys.exit()
+
+    def forward_bot_to_group(self, message_id):
+        """ Forwards one message from the Game Bot to the supergroup """
+        self.client.invoke(ForwardMessagesRequest(
+            get_input_peer(self.chats['cw']),
+            [message_id],
+            [generate_random_long()],
+            get_input_peer(self.chats['group'])
+        ))

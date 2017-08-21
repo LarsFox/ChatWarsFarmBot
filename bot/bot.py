@@ -181,7 +181,7 @@ class ChatWarsFarmBot(object):
                 self.logger.log("Не могу атаковать союзника")
 
                 # Форт остаемся защищать, а вот союзников не защищаем, ну их
-                if "форт" in self.order:
+                if "форт" in order:
                     self.equip(DEFEND)
                 else:
                     self.defend()
@@ -396,8 +396,8 @@ class ChatWarsFarmBot(object):
 
         self.updater.update(command)
         self.logger.sleep(330, "Сон прямого контроля")
-        _, reply = self.updater.bot_message
-        self.updater.send_group(reply, markdown=False)
+        message_id, _ = self.updater.bot_message
+        self.updater.forward_bot_to_group(message_id)
 
         return True
 
