@@ -5,9 +5,6 @@
 import random
 import time
 
-from sessions import CAVE_LEVEL, CAVE_CHANCE
-
-
 from bot.data import WOODS, CAVE, SHORE
 from sessions import CAVE_LEVEL, CAVE_CHANCE
 

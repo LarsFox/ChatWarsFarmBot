@@ -10,15 +10,15 @@ import time
 
 
 from bot.client import TelethonClient
-from bot.data import COOLDOWN, HERO, HELLO, \
-                     ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP, \
-                     CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, \
-                     QUESTS, SHORE
+from bot.data import (
+    COOLDOWN, HERO, HELLO, ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP,
+    CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE)
 
 from bot.logger import Logger
 from bot.updater import Updater
-from modules.helpers import get_fight_command, go_wasteland, \
-                            get_level, get_flag
+from modules.helpers import (
+    get_fight_command, go_wasteland, get_level, get_flag)
+
 from modules.locations import LOCATIONS
 
 
@@ -360,6 +360,7 @@ class ChatWarsFarmBot(object):
 
     def caravan(self):
         """ Перехватывает КОРОВАН """
+        self.updater.update()
         if CARAVAN in self.updater.message:
             self.logger.log("Защищаю караван")
             self.updater.update(CARAVAN)
@@ -369,7 +370,7 @@ class ChatWarsFarmBot(object):
 
     def direct_help(self, params, command):
         """ Отправляет команду, полученную в формате "prefix level: command"
-        params: строка до двоеточия
+        params: строка до двоеточия: prefix + level
         command: строка после, сообщение, которое будет отправлено
         prefix определяет, проигнориует ли бот команду,
         level определяет минимальный уровень для выполнения команды

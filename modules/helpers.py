@@ -5,9 +5,8 @@
 
 import re
 
-
-from bot.data import ATTACK, DEFEND, RIGHT, LEFT, EQUIP, \
-                     WAR, GENITIVES, FIGHT
+from bot.data import (
+    ATTACK, DEFEND, RIGHT, LEFT, EQUIP, WAR, GENITIVES, FIGHT)
 
 
 def go_wasteland(flag, message):
