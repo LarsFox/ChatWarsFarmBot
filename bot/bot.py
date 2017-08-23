@@ -11,8 +11,8 @@ import time
 
 from bot.client import TelethonClient
 from bot.data import (
-    COOLDOWN, HERO, HELLO, ATTACK, DEFEND, ALLY, VERBS, HANDS, REGROUP,
-    CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE)
+    COOLDOWN, HERO, HELLO, ATTACK, DEFEND, VICTORIES, ALLY, VERBS, HANDS,
+    REGROUP, CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE)
 
 from bot.logger import Logger
 from bot.updater import Updater
@@ -71,7 +71,7 @@ class ChatWarsFarmBot(object):
 
         # Определяем флаг и уровень
         updated = self.updater.update("/hero")
-        while not updated:
+        while not updated or VICTORIES not in self.updater.message:
             self.logger.sleep(300, "Не могу проснуться, посплю еще немного!")
             updated = self.updater.update("/hero")
 
