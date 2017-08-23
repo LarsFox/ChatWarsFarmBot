@@ -232,8 +232,8 @@ class ChatWarsFarmBot(object):
         verb = VERBS[self.logger.girl][self.status]
         self.updater.send_group(verb + self.order)
 
-        # Если был потерян предмет, оповещаем Супергруппу о беде
-        if "Вы потеряли" in self.updater.message:
+        # Если был потерян или найден предмет, оповещаем Супергруппу
+        if "Вы " in self.updater.message:
             self.updater.send_group(self.updater.message)
 
         # Обновляем инвентарь
@@ -374,7 +374,7 @@ class ChatWarsFarmBot(object):
         command: строка после, сообщение, которое будет отправлено
         prefix определяет, проигнориует ли бот команду,
         level определяет минимальный уровень для выполнения команды
-        После отправки команды спит 5.5 минут, поэтому убедись,
+        После отправки строительной команды спит 5.5 минут, поэтому убедись,
         что никакие другие процессы не будут перекрыты
         и что последнее сообщение актуально
         """
@@ -399,6 +399,8 @@ class ChatWarsFarmBot(object):
 
         if "/repair" in command or "/build" in command:
             self.logger.sleep(330, "Сон прямого контроля от стройки")
+        else:
+            self.logger.sleep(90, "Сон прямого контроля")
 
         message_id, _ = self.updater.bot_message
         self.updater.forward_bot_to_group(message_id)
