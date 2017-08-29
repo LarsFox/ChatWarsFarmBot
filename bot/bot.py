@@ -398,6 +398,9 @@ class ChatWarsFarmBot(object):
         self.updater.update(command)
 
         if "/repair" in command or "/build" in command:
+            if self.level < 15:
+                return False
+
             self.logger.sleep(330, "Сон прямого контроля от стройки")
         else:
             self.logger.sleep(90, "Сон прямого контроля")
@@ -418,8 +421,7 @@ class ChatWarsFarmBot(object):
         parts = content.split(": ")
         # Отделяем команду через двоеточие с пробелом
         if len(parts) == 2:
-            self.direct_help(*parts)
-            message, content = self.updater.group_message
+            return self.direct_help(*parts)
 
         # Не помогаем на побережье, если не контролируем побережье
         if SHORE in content:
