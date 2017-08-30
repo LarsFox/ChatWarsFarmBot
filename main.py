@@ -97,19 +97,22 @@ class Main(object):
 
             # Ошибку при первичном подключении обрабатываем отдельно
             try:
+                # Начинаем с короткого сна
+                if self.reboots[user]:
+                    time.sleep(r.random() * 60)
+
                 bot.connect()
+
             except (ValueError, OSError, telethon.errors.RPCError) as err:
                 bot.logger.log("Не могу подключиться, немного посплю")
                 time.sleep(120 + 60*r.random())
                 continue
 
             try:
-                # Перезагружаем и откладываем все действия
-                if self.reboots[user]:
-                    for location in bot.locations:
-                        location.postpone()
+                for location in bot.locations:
+                    location.postpone()
 
-                    time.sleep(r.random() * 180)
+                time.sleep(r.random() * 180)
 
                 # Поехали
                 bot.start()

@@ -109,7 +109,7 @@ class Updater(object):
 
             if self.mid != mid:
                 self.mid, self.message = mid, message
-            
+
             return True
 
         self.send_message("cw", text)

@@ -11,13 +11,14 @@ import time
 
 from bot.client import TelethonClient
 from bot.data import (
-    COOLDOWN, HERO, HELLO, ATTACK, DEFEND, VICTORIES, ALLY, VERBS, HANDS,
+    COOLDOWN, HERO, HELLO, SENDING,
+    ATTACK, DEFEND, VICTORIES, ALLY, VERBS, HANDS,
     REGROUP, CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE)
 
 from bot.logger import Logger
 from bot.updater import Updater
 from modules.helpers import (
-    get_fight_command, go_wasteland, get_level, get_flag)
+    get_fight_command, go_wasteland, get_level, get_flag, count_help)
 
 from modules.locations import LOCATIONS
 
@@ -368,45 +369,41 @@ class ChatWarsFarmBot(object):
 
         return True
 
-    def direct_help(self, params, command):
-        """ Отправляет команду, полученную в формате "prefix level: command"
-        params: строка до двоеточия: prefix + level
-        command: строка после, сообщение, которое будет отправлено
-        prefix определяет, проигнориует ли бот команду,
-        level определяет минимальный уровень для выполнения команды
+    def direct_help(self, prefix, command):
+        """ Отправляет команду, полученную в формате prefix: command
+        prefix: строка до двоеточия в формате prefix level_from (level_to)
+        command: строка после, сообщение в формате text x N
+
         После отправки строительной команды спит 5.5 минут, поэтому убедись,
         что никакие другие процессы не будут перекрыты
         и что последнее сообщение актуально
         """
-        args = params.split()
-        pre = args[0]
 
-        # Отправляем, если сходится имя, замок или вообще все
-        if pre not in (self.flag, self.logger.user, REGROUP):
+        text, times = count_help(prefix, command,
+                                 self.flag, self.level, self.logger.user)
+
+        if not text:
             return False
 
-        if len(args) >= 2:
-            try:
-                level = int(args[1])
-                if self.level < level:
+        for i in range(times):
+            # Команда подходит, отправляем
+            self.updater.update(text)
+
+            # Спим только если действительно пошли на стройку
+            if "/repair" in text or "/build" in text:
+                if "В казне" not in self.updater.message:
+                    self.logger.sleep(310, "Сон от стройки", False)
+                else:
+                    # Не строим, если не можем
+                    self.updater.send_group("Не из чего строить!")
                     return False
 
-            except ValueError:
-                self.logger.log("Ошибка в команде")
-                return False
+            else:
+                self.logger.sleep(90, "Сон прямого контроля")
 
-        self.updater.update(command)
-
-        if "/repair" in command or "/build" in command:
-            if self.level < 15:
-                return False
-
-            self.logger.sleep(330, "Сон прямого контроля от стройки")
-        else:
-            self.logger.sleep(90, "Сон прямого контроля")
-
-        message_id, _ = self.updater.bot_message
-        self.updater.forward_bot_to_group(message_id)
+            message_id, _ = self.updater.bot_message
+            self.logger.log(SENDING.format(text, i+1, times))
+            self.updater.forward_bot_to_group(message_id)
 
         return True
 

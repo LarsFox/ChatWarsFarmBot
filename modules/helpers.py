@@ -6,7 +6,7 @@
 import re
 
 from bot.data import (
-    ATTACK, DEFEND, RIGHT, LEFT, EQUIP, WAR, GENITIVES, FIGHT)
+    ATTACK, DEFEND, REGROUP, RIGHT, LEFT, EQUIP, WAR, GENITIVES, FIGHT)
 
 
 def go_wasteland(flag, message):
@@ -71,3 +71,67 @@ def get_fight_command(message):
         return message[command:command+27]
 
     return None
+
+def validate_prefix(prefix, flag, level, user):
+    """ Проверяет верность префикса в формате who level_from (level_to)
+    who определяет, каким фармителям выполнять команду,
+    level_from определяет минимальный уровень для выполнения команды,
+    level_to — максимальный
+    """
+    args = prefix.split()
+    # Игнорируем, если не сходится ни имя, ни замок, а команда не для всех
+    if args[0] not in (flag, user, REGROUP):
+        return False
+
+    count = len(args)
+    # Игнорируем, если уровень меньше
+    if count == 2 and level < int(args[1]):
+        return False
+
+    # Игнорируем, если уровень меньше или больше
+    elif count == 3 and (int(args[1]) < level < int(args[2])):
+        return False
+
+    return True
+
+def count_command(args, level):
+    """ Считает, сколько раз отправить команду в формате text x N
+    text будет отправлен боту N раз
+    """
+    text = args[0]
+
+    # Малышам нечего делать на стройке
+    if "/repair" in text or "/build" in text:
+        if level < 15:
+            return 0
+
+    # Параметр не указан, отправляем один раз
+    if len(args) == 1:
+        return 1
+
+    # Параметр указан, отправляем нужное количество раз
+    elif len(args) == 2:
+        return int(args[1])
+
+    return 0
+
+def count_help(prefix, command, flag, level, user):
+    """ Проверяет верность полученной команды
+    и возвращает текст и количество его отправок.
+
+    Если что-то пойдет не так, вернет None, 0.
+    """
+    try:
+        valid = validate_prefix(prefix, flag, level, user)
+        if not valid:
+            return None, 0
+
+        # Определяем количество отправок
+        args = command.split(" x ")
+        return args[0], count_command(args, level)
+
+    except (ValueError, IndexError):
+        pass
+
+    # Что-то не так
+    return None, 0
