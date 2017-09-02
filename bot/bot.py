@@ -389,14 +389,19 @@ class ChatWarsFarmBot(object):
             # Команда подходит, отправляем
             self.updater.update(text)
 
-            # Спим только если действительно пошли на стройку
             if "/repair" in text or "/build" in text:
-                if "В казне" not in self.updater.message:
-                    self.logger.sleep(310, "Сон от стройки", False)
-                else:
-                    # Не строим, если не можем
+                # Не строим, если не можем
+                if "В казне" in self.updater.message:
                     self.updater.send_group("Не из чего строить!")
                     return False
+
+                elif "Битва близко" in self.updater.message:
+                    self.updater.send_group("Поздно строить!")
+                    return False
+
+                # Спим только если действительно пошли на стройку
+                else:
+                    self.logger.sleep(310, "Сон от стройки", False)
 
             else:
                 self.logger.sleep(90, "Сон прямого контроля")
