@@ -410,6 +410,8 @@ class ChatWarsFarmBot(object):
             self.logger.log(SENDING.format(text, i+1, times))
             self.updater.forward_bot_to_group(message_id)
 
+        
+        self.updater.send_group("Всё!")
         return True
 
     def help_other(self):
