@@ -89,7 +89,7 @@ def validate_prefix(prefix, flag, level, user):
         return False
 
     # Игнорируем, если уровень меньше или больше
-    elif count == 3 and (int(args[1]) < level < int(args[2])):
+    elif count == 3 and (int(args[1]) < level or int(args[2]) > level):
         return False
 
     return True
