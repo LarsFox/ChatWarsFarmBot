@@ -401,7 +401,7 @@ class ChatWarsFarmBot(object):
 
                 # Спим только если действительно пошли на стройку
                 else:
-                    self.logger.sleep(310, "Сон от стройки", False)
+                    self.logger.sleep(310, "Сон от стройки")
 
             else:
                 self.logger.sleep(90, "Сон прямого контроля")
@@ -410,7 +410,9 @@ class ChatWarsFarmBot(object):
             self.logger.log(SENDING.format(text, i+1, times))
             self.updater.forward_bot_to_group(message_id)
 
-        
+            if times > 1:
+                self.logger.sleep(30, "Сон множественной команды", False)
+
         self.updater.send_group("Всё!")
         return True
 
