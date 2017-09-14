@@ -278,6 +278,8 @@ class ChatWarsFarmBot(object):
     def send_locations(self):
         """ Отправляется во все локации """
         for location in self.locations:
+            self.hero()
+
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() - location.after < 0:
                 continue
@@ -341,8 +343,6 @@ class ChatWarsFarmBot(object):
         if quick:
             self.updater.update(HERO, 2)
             return True
-
-        self.updater.update(HERO)
 
         if LEVEL_UP in self.updater.message:
             self.logger.log("Ух-ты, новый уровень!")
