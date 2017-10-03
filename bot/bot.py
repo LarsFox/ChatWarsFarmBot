@@ -11,7 +11,7 @@ import time
 
 from bot.client import TelethonClient
 from bot.data import (
-    COOLDOWN, HERO, HELLO, SENDING,
+    COOLDOWN, HERO, HELLO, SENDING, MONSTER_COOLDOWN,
     ATTACK, DEFEND, VICTORIES, ALLY, VERBS, HANDS,
     REGROUP, CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE)
 
@@ -46,6 +46,7 @@ class ChatWarsFarmBot(object):
 
         # Устанавливаем важные параметры
         self.exhaust = time.time()         # время до следующей передышки
+        self.monster = time.time()         # время до сражения с монстрами
         self.order = None                  # приказ из Супергруппы
         self.status = None                 # статус бота до и после битвы
         self.locations = LOCATIONS.copy()  # все локации
@@ -429,6 +430,10 @@ class ChatWarsFarmBot(object):
         if len(parts) == 2:
             return self.direct_help(*parts)
 
+        # Не помогаем, если боев на сегодня слишком много
+        if time.time() < self.monster:
+            return False
+
         # Не помогаем на побережье, если не контролируем побережье
         if SHORE in content:
             if self.flag not in content:
@@ -444,6 +449,9 @@ class ChatWarsFarmBot(object):
             self.logger.log("Иду на помощь: {}".format(command))
             self.updater.send_group("+")
             self.updater.update(command)
+
+        if "Слишком много" in self.updater.message:
+            self.monster = time.time() + MONSTER_COOLDOWN
 
         return True
 
