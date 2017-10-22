@@ -77,8 +77,9 @@ class Updater(object):
 
     def send_penguin(self):
         """ Отправляет инвентарь Пингвину """
-        self.send_message("trade_bot", "/start")
-        self.logger.sleep(3, "Отправляю инвентарь пингвину")
+        return True
+        # self.send_message("trade_bot", "/start")
+        # self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
         _, content = self.client.get_message(self.chats["trade_bot"])
         self.send_message("penguin", content, markdown=False)
