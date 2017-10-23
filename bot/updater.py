@@ -81,9 +81,9 @@ class Updater(object):
         # self.send_message("trade_bot", "/start")
         # self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
-        _, content = self.client.get_message(self.chats["trade_bot"])
-        self.send_message("penguin", content, markdown=False)
-        return True
+        # _, content = self.client.get_message(self.chats["trade_bot"])
+        # self.send_message("penguin", content, markdown=False)
+        # return True
 
     def send_message(self, entity_key, message, markdown=True):
         """ Отправляет сообщение без предпросмотра
