@@ -115,6 +115,6 @@ class TelethonClient(TelegramClient):
                 get_input_peer(from_entity),
                 [message_id],
                 [generate_random_long()],
-                [get_input_peer(to_entity)]
+                get_input_peer(to_entity)
             )
         )
