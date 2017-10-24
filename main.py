@@ -103,7 +103,9 @@ class Main(object):
 
                 bot.connect()
 
-            except (ValueError, OSError, telethon.errors.RPCError) as err:
+            except (ValueError, OSError,
+                    telethon.errors.RPCError,
+                    telethon.errors.BadMessageError) as err:
                 bot.logger.log("Не могу подключиться, немного посплю")
                 time.sleep(120 + 60*r.random())
                 continue
