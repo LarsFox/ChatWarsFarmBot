@@ -325,7 +325,7 @@ class ChatWarsFarmBot(object):
                 self.logger.log("А, я же не дома")
                 return False
 
-            self.logger.sleep(310, "Вернусь через 5 минут")
+            self.logger.sleep(350, "Вернусь через 7 минут")
 
             # По возвращении деремся с монстром, если он есть
             self.fight(emoji)
