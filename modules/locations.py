@@ -58,13 +58,13 @@ class Adventures(Location):
     """ Локация для всех приключений """
     def __init__(self, console, command, instant, prob):
         super().__init__(console, command, instant, prob)
-        self.level = False
+        self.level = 0
         self.available = []
 
     @property
     def emoji(self):
         for command in self.command:
-            if command not in self.available:
+            if command["command"] not in self.available:
                 continue
 
             if self.level < command["level"]:
@@ -81,7 +81,7 @@ class Adventures(Location):
         """ Обновляет параметры, от которых зависит выбор локации """
         self.level = level
         self.available = [c["command"] for c in self.command
-                          if c["command"] in available]
+                          if c["command"].lower() in available.lower()]
 
 
 RANDOM_COMMANDS = [

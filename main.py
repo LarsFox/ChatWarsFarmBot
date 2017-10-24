@@ -111,10 +111,11 @@ class Main(object):
                 continue
 
             try:
-                for location in bot.locations:
-                    location.postpone()
+                if self.reboots[user]:
+                    for location in bot.locations:
+                        location.postpone()
 
-                time.sleep(r.random() * 180)
+                    time.sleep(r.random() * 180)
 
                 # Поехали
                 bot.start()
