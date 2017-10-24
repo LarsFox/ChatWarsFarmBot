@@ -81,7 +81,7 @@ class Adventures(Location):
         """ Обновляет параметры, от которых зависит выбор локации """
         self.level = level
         self.available = [c["command"] for c in self.command
-                          if c in available]
+                          if c["command"] in available]
 
 
 RANDOM_COMMANDS = [
