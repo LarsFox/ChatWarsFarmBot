@@ -5,8 +5,7 @@
 import random
 import time
 
-from bot.data import WOODS, CAVE, SHORE
-from sessions import CAVE_LEVEL, CAVE_CHANCE
+from sessions import ADVENTURES
 
 
 class Location(object):
@@ -64,16 +63,17 @@ class Adventures(Location):
 
     @property
     def emoji(self):
-        # Побережье перестало быть интересным
-        # if SHORE in self.available:
-        #     return SHORE
+        for command in self.command:
+            if command not in self.available:
+                continue
 
-        if CAVE in self.available:
-            if self.level >= CAVE_LEVEL and random.random() < CAVE_CHANCE:
-                return CAVE
+            if self.level < command["level"]:
+                continue
 
-        if WOODS in self.available:
-            return WOODS
+            if random.random() > command["chance"]:
+                continue
+
+            return command["command"]
 
         return "/inv"
 
@@ -90,13 +90,6 @@ RANDOM_COMMANDS = [
     # "/report",
     # "/inv",
     # "/trades"
-]
-
-ADVENTURES = [
-    WOODS,
-    CAVE,
-    SHORE,
-    # CARAVANS,
 ]
 
 LOCATIONS = [

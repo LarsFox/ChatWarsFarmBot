@@ -1,1 +1,0 @@
-web: python3 main.py X1 runserver 0.0.0.0:5000

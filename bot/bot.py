@@ -13,7 +13,7 @@ from bot.client import TelethonClient
 from bot.data import (
     COOLDOWN, HERO, HELLO, SENDING, MONSTER_COOLDOWN,
     ATTACK, DEFEND, VICTORIES, ALLY, VERBS, HANDS,
-    REGROUP, CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE)
+    REGROUP, CARAVAN, LEVEL_UP, PLUS_ONE, EQUIP_ITEM, QUESTS, SHORE, BUSY)
 
 from bot.logger import Logger
 from bot.updater import Updater
@@ -321,7 +321,7 @@ class ChatWarsFarmBot(object):
                 return False
 
             # Если уже в пути, прерываем отправку команд
-            if "сейчас занят другим приключением" in self.updater.message:
+            if BUSY in self.updater.message:
                 self.logger.log("А, я же не дома")
                 return False
 
@@ -400,6 +400,9 @@ class ChatWarsFarmBot(object):
                     self.updater.send_group("Поздно строить!")
                     return False
 
+                elif BUSY in self.updater.message:
+                    self.logger.sleep(300)
+
                 # Спим только если действительно пошли на стройку
                 else:
                     self.logger.sleep(310, "Сон от стройки")
@@ -447,11 +450,13 @@ class ChatWarsFarmBot(object):
 
         if command:
             self.logger.log("Иду на помощь: {}".format(command))
-            self.updater.send_group("+")
             self.updater.update(command)
 
-        if "Слишком много" in self.updater.message:
-            self.monster = time.time() + MONSTER_COOLDOWN
+            if "Слишком много" in self.updater.message:
+                self.monster = time.time() + MONSTER_COOLDOWN
+                return False
+
+            self.updater.send_group("+")
 
         return True
 
