@@ -6,14 +6,18 @@
 import sys
 import time
 
-import telethon
+from telethon import TelegramClient
+from telethon.tl.functions.messages.forward_messages import (
+    ForwardMessagesRequest)
+from telethon.helpers import generate_random_long
+from telethon.utils import get_input_peer
 # from telethon.tl.functions.messages import ReadHistoryRequest
 # from telethon.utils import get_input_peer
 
 from sessions import API_ID, API_HASH
 
 
-class TelethonClient(telethon.TelegramClient):
+class TelethonClient(TelegramClient):
     """ Основной клиент для работы с Телеграмом """
     def __init__(self, user, phone):
         # Создаем файл сессии
@@ -103,3 +107,14 @@ class TelethonClient(telethon.TelegramClient):
             content = message.__class__.__name__
 
         return message, content
+
+    def forward_message(self, from_entity, message_id, to_entity):
+        """ Forwards a single message from an entity to entity """
+        self.invoke(
+            ForwardMessagesRequest(
+                get_input_peer(from_entity),
+                [message_id],
+                [generate_random_long()],
+                [get_input_peer(to_entity)]
+            )
+        )

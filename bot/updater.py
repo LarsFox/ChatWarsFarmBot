@@ -5,11 +5,6 @@
 
 import sys
 
-from telethon.tl.functions.messages.forward_messages import \
-        ForwardMessagesRequest
-from telethon.helpers import generate_random_long
-from telethon.utils import get_input_peer
-
 from bot.data import WAR, WAR_COMMANDS, REGROUP, CHATS, WIND
 from modules.helpers import get_equipment
 from sessions import SUPERGROUP_ID
@@ -76,14 +71,17 @@ class Updater(object):
         self.send_message("group", message, markdown)
 
     def send_penguin(self):
-        """ Отправляет инвентарь Пингвину """
-        return True
-        # self.send_message("trade_bot", "/start")
-        # self.logger.sleep(3, "Отправляю инвентарь пингвину")
+        """ Отправляет инвентарь Пингвину (Еноту) """
+        self.send_message("trade_bot", "/start")
+        self.logger.sleep(3, "Отправляю инвентарь пингвину")
 
-        # _, content = self.client.get_message(self.chats["trade_bot"])
-        # self.send_message("penguin", content, markdown=False)
-        # return True
+        message, _ = self.client.get_message(self.chats["trade_bot"])
+        self.client.forward_message(
+            self.chats["trade_bot"],
+            message.id,
+            self.chats["penguin"]
+        )
+        return True
 
     def send_message(self, entity_key, message, markdown=True):
         """ Отправляет сообщение без предпросмотра
@@ -174,10 +172,9 @@ class Updater(object):
         sys.exit()
 
     def forward_bot_to_group(self, message_id):
-        """ Forwards one message from the Game Bot to the supergroup """
-        self.client.invoke(ForwardMessagesRequest(
-            get_input_peer(self.chats['cw']),
-            [message_id],
-            [generate_random_long()],
-            get_input_peer(self.chats['group'])
-        ))
+        """ Пересылает Сообщение из бота игры в супергруппу """
+        self.client.forward_message(
+            self.chats["cw"],
+            message_id,
+            self.chats["group"]
+        )
