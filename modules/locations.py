@@ -80,7 +80,8 @@ class Adventures(Location):
     def update(self, level, available):
         """ Обновляет параметры, от которых зависит выбор локации """
         self.level = level
-        self.available = [c for c in self.command if c in available]
+        self.available = [c["command"] for c in self.command
+                          if c in available]
 
 
 RANDOM_COMMANDS = [
