@@ -206,7 +206,7 @@ class ChatWarsFarmBot(object):
         if not self.updater.update(DEFEND, 2, wind="поход в защиту"):
             return False
 
-        if "будем держать оборону" in self.updater.message:
+        if "приготовился" not in self.updater.message:
             if not self.updater.update(self.flag, 2, wind="приказ к защите"):
                 return False
 
