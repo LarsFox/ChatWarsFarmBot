@@ -47,8 +47,8 @@ class Updater(object):
         return get_equipment(self.message)
 
     def update_chats(self):
-        """ Обновляет список чатов на основе 10 последних диалогов """
-        _, entities = self.client.get_dialogs(10)
+        """ Обновляет список чатов на основе 100 последних диалогов """
+        _, entities = self.client.get_dialogs(100)
 
         for entity in entities:
             name = CHATS.get(entity.id)
