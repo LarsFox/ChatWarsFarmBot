@@ -50,6 +50,10 @@ class ChatWarsFarmBot(object):
         self.order = None                  # приказ из Супергруппы
         self.status = None                 # статус бота до и после битвы
         self.locations = LOCATIONS.copy()  # все локации
+        self.primary = ATTACK              # основной атрибут
+
+        if LEVEL_UP in data:
+            self.primary = PLUS_ONE[data[LEVEL_UP]]
 
         # Флаг, уровень и обмундирование определим позднее
         self.flag = None
@@ -350,7 +354,7 @@ class ChatWarsFarmBot(object):
             self.updater.update(LEVEL_UP)
 
             if "какую характеристику ты" in self.updater.message:
-                self.updater.update(PLUS_ONE)
+                self.updater.update(self.primary)
                 self.level += 1
                 self.updater.send_group(
                     "Новый уровень: `{}`!".format(self.level))

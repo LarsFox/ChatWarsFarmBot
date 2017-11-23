@@ -75,7 +75,7 @@
 бот перешлет последнее сообщение от бота игры.
 """
 
-from bot.data import WOODS, CAVE, SHORE, CARAVANS
+from bot.data import LEVEL_UP, DEFEND, WOODS, CAVE, SHORE, CARAVANS
 
 
 # Берем из Телеграма
@@ -101,7 +101,9 @@ SESSIONS = {
     "S1": {                       # запуск: python main.py s1, лог: s1.log
         "phone": "+12345678901",
         "girl": True,             # влияет на род глаголов в 3-м лице :)
+        LEVEL_UP: DEFEND,         # атрибут на выбор, по умолчанию — атака
     },
+
     "Session-2": {                # продолжаем для второго аккаунта
     }                             # запуск обоих: python main.py s1 session-2
 }
