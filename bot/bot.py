@@ -50,7 +50,7 @@ class ChatWarsFarmBot(object):
         self.order = None                  # приказ из Супергруппы
         self.status = None                 # статус бота до и после битвы
         self.locations = LOCATIONS.copy()  # все локации
-        self.primary = ATTACK              # основной атрибут
+        self.primary = PLUS_ONE[ATTACK]    # основной атрибут
 
         if LEVEL_UP in data:
             self.primary = PLUS_ONE[data[LEVEL_UP]]
