@@ -86,7 +86,11 @@ class ChatWarsFarmBot(object):
         self.equipment = self.updater.equipment
 
         # Отправляем сообщение о пробуждении
-        self.updater.send_group(HELLO.format(self.flag, self.level))
+        self.updater.send_group(HELLO.format(
+            self.flag,
+            self.level,
+            self.client.user
+        ))
 
     # Системные функции
 
