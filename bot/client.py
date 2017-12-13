@@ -7,6 +7,7 @@ import sys
 import time
 
 from telethon import TelegramClient
+from telethon.errors import RPCError
 from telethon.tl.functions.messages.forward_messages import (
     ForwardMessagesRequest)
 from telethon.helpers import generate_random_long
@@ -42,19 +43,25 @@ class TelethonClient(TelegramClient):
             code_ok = False
             while not code_ok:
                 code = input('Введите полученный в Телеграме код: ')
-                code_ok = self.sign_in(self.phone, code)
 
-            # Выходим, чтобы запросить код в следующей сессии
+                # Двусторонняя верификация
+                try:
+                    code_ok = self.sign_in(self.phone, code)
+
+                except RPCError as err:
+                    if err.password_required:
+                        verified = input(
+                            'Введите пароль для двусторонней аутентификации: ')
+
+                        code_ok = self.sign_in(password=verified)
+
+                    else:
+                        raise err
+
+            # Выходим, чтобы запросить код в следующем боте
             sys.exit("Код верный! Перезапускай {}.".format(self.user))
 
         self.user_id = self.get_me().id
-
-    '''
-    def read_messages(self, entity, messages):
-        """ Отправляет уведомление о прочтении сообщений """
-        max_id = max(msg.id for msg in messages)
-        return self.invoke(ReadHistoryRequest(peer=get_input_peer(entity), max_id=max_id))
-    '''
 
     def get_message(self, entity, repeat=True):
         """
