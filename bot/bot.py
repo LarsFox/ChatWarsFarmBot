@@ -88,8 +88,8 @@ class ChatWarsFarmBot(object):
         # Отправляем сообщение о пробуждении
         self.updater.send_group(HELLO.format(
             self.flag,
-            self.level,
-            self.client.user
+            self.client.user,
+            self.level
         ))
 
     # Системные функции
