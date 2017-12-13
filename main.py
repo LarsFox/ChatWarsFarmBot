@@ -4,16 +4,16 @@
 """
 
 
-import multiprocessing as mp
 import random as r
-import resource
+# import resource
 import sys
+import threading
 import time
 import traceback
 
 import telethon
 
-from bot.bot import ChatWarsFarmBot
+from bot.client import FarmBot
 from sessions import SESSIONS
 
 
@@ -57,7 +57,7 @@ class Main(object):
 
             user = self.users[0]
             params = SESSIONS.get(user)
-            bot = ChatWarsFarmBot(user, params, self.silent)
+            bot = FarmBot(user, params, self.silent)
             bot.connect()
             sys.exit("Код уже был введен!")
 
@@ -68,22 +68,23 @@ class Main(object):
 
             user = self.users[0]
             params = SESSIONS.get(user)
-            bot = ChatWarsFarmBot(user, params, self.silent)
+            bot = FarmBot(user, params, self.silent)
             bot.connect()
-            _, message = bot.client.get_message(bot.updater.chats["telegram"])
-            sys.exit(message[:23])
+            # _, message = bot.client.get_message(bot.updater.chats["telegram"])
+            # sys.exit(message[:23])
+            # todo
 
         # Остальной набор
-        jobs = []
+        # jobs = []
         for _, user in enumerate(self.users):
             params = SESSIONS.get(user)
             if not params:
                 continue
 
-            worker = mp.Process(target=self.launch_user,
-                                args=(user, params))
+            worker = threading.Thread(target=self.launch_user,
+                                      args=(user, params))
 
-            jobs.append(worker)
+            # jobs.append(worker)
             worker.start()
 
     def launch_user(self, user, params):
@@ -93,7 +94,7 @@ class Main(object):
         params: словарь с параметрами из sessions.py
         """
         while True:
-            bot = ChatWarsFarmBot(user, params, self.silent)
+            bot = FarmBot(user, params, self.silent)
 
             # Ошибку при первичном подключении обрабатываем отдельно
             try:
@@ -138,7 +139,8 @@ class Main(object):
                                                  exc_value, exc_traceback)
 
                 text = ''.join(exc)
-                bot.updater.send_group(text)
+                # todo
+                # bot.updater.send_group(text)
                 bot.logger.log(text)
 
                 raise err
@@ -150,7 +152,8 @@ class Main(object):
 def memory():
     """ Ограничивает потребление памяти
     https://stackoverflow.com/questions/41105733 """
-    resource.setrlimit(resource.RLIMIT_AS, (128 * 1024 * 1024, -1))
+    pass
+    # resource.setrlimit(resource.RLIMIT_AS, (128 * 1024 * 1024, -1))
 
 
 if __name__ == '__main__':
