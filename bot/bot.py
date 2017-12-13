@@ -46,12 +46,17 @@ class ChatWarsFarmBot(object):
 
         # Устанавливаем важные параметры
         self.exhaust = time.time()         # время до следующей передышки
+        self.locations = LOCATIONS.copy()  # все локации
         self.monster = time.time()         # время до сражения с монстрами
         self.order = None                  # приказ из Супергруппы
         self.status = None                 # статус бота до и после битвы
-        self.locations = LOCATIONS.copy()  # все локации
         self.primary = PLUS_ONE[ATTACK]    # основной атрибут
 
+        # Перезаписываем шансы локаций, если они указаны
+        if "adventures" in data:
+            self.locations[2].command = data["adventures"]
+
+        # Запоминаем, какую характеристику увеличивать
         if LEVEL_UP in data:
             self.primary = PLUS_ONE[data[LEVEL_UP]]
 

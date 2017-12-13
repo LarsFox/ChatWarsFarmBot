@@ -5,8 +5,17 @@
 import random
 import time
 
-from sessions import ADVENTURES
+from bot.data import (
+    SHORE, CAVE, CARAVANS, WOODS
+)
 
+
+ADVENTURES = [
+    {"command": SHORE, "level": 0, "chance": 0},
+    {"command": CAVE, "level": 0, "chance": 0},
+    {"command": CARAVANS, "level": 0, "chance": 0},
+    {"command": WOODS, "level": 0, "chance": 1},
+]
 
 class Location(object):
     """ Локация, любое место в игре, куда можем отправиться """
@@ -93,6 +102,7 @@ RANDOM_COMMANDS = [
     # "/trades"
 ]
 
+# На индекс 2 жестко завязано обновление локаций из файла сессий
 LOCATIONS = [
     Location("запрос героя", "🏅Герой", True, 0.7),
     Location("визит в замок", "🏰Замок", True, 0.6),
