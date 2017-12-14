@@ -8,21 +8,29 @@ import random
 import sys
 import time
 
+
 from telethon import TelegramClient
 from telethon.errors import RPCError
+from telethon.helpers import generate_random_long
 from telethon.tl.functions.messages.forward_messages import (
     ForwardMessagesRequest)
-from telethon.helpers import generate_random_long
+from telethon.tl.types import UpdateNewMessage
 from telethon.utils import get_input_peer
 # from telethon.tl.functions.messages import ReadHistoryRequest
 # from telethon.utils import get_input_peer
 
 from bot.data import (
-    PLUS_ONE, LEVEL_UP, ATTACK
+    CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
+    PLUS_ONE, LEVEL_UP, ATTACK,
+    SHORE,
+    MONSTER_COOLDOWN
+)
+from bot.helpers import (
+    count_help, get_fight_command, go_wasteland
 )
 from bot.locations import LOCATIONS
 from bot.logger import Logger
-from sessions import API_ID, API_HASH #, SUPERGROUP
+from sessions import API_ID, API_HASH, SUPERGROUP
 
 
 class FarmBot(TelegramClient):
@@ -31,6 +39,7 @@ class FarmBot(TelegramClient):
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, user, data, silent=True):
+        # todo: комментарии к каждому атрибуту
         # Если выводим в лог, очищаем его и начинаем с задержкой
         if silent:
             time.sleep(random.random() * 30)
@@ -48,6 +57,7 @@ class FarmBot(TelegramClient):
         # Создаем файл сессии и устанавливаем параметры Телеграма
         # todo: here or later
         super().__init__("sessions/" + user, API_ID, API_HASH)
+        self.chats = {}
         self.phone = data['phone']
         self.user_id = 0
 
@@ -56,8 +66,10 @@ class FarmBot(TelegramClient):
         # 1 — занят
         # 2 — жду ветер
         # 3 — выполняю прямую команду
-        # 4 — заблокирован
+        # -1 — заблокирован
         self.state = 0
+
+        self.times = 0
 
         # Устанавливаем важные параметры
         self.exhaust = time.time()         # время до следующей передышки
@@ -90,6 +102,9 @@ class FarmBot(TelegramClient):
     def start(self):
         """ todo """
         self.connect_with_code()
+
+        self.update_chats()
+        self.add_update_handler(self.update_handler)
         self.user_id = self.get_me().id
 
     def connect_with_code(self):
@@ -123,6 +138,158 @@ class FarmBot(TelegramClient):
 
             # Выходим, чтобы запросить код в следующем боте
             sys.exit("Код верный! Перезапускай {}.".format(self.user))
+
+    def update_handler(self, update):
+        """ Получает обновления от Телетона и обрабатывает их """
+        if self.state == -1:
+            return
+
+        if isinstance(update, UpdateNewMessage):
+            message = update.message
+
+            if message.from_id == TELEGRAM:
+                self.telegram(message)
+
+            elif message.from_id == GAME:
+                self.game(message)
+
+            elif message.from_id == SUPERGROUP:
+                self.group(message)
+
+            elif message.from_id == TRADE or message.from_id == ENOT:
+                pass # todo: read
+
+            elif message.from_id == CAPTCHA:
+                pass # todo: resend
+
+
+    def telegram(self, message):
+        """ Записывает полученный от Телеграма код """
+        if "Your login code" in message.message:
+            self.logger.log(message.message[:23])
+
+    def game(self, message):
+        """ todo: комментарии к блокам и функции """
+        text = message.message
+
+        # Сообщения с ветром самые приоритетные
+        if "завывает" in text:
+            self.state = 2
+            return
+
+        # На приключении
+        if "сейчас занят другим приключением" in text:
+            self.state = 1
+            return
+
+        # Караваны
+        if "/go" in text:
+            self.state = 1
+            self.send_message(self.chats[GAME], "/go")
+            return
+
+        # Прямые команды
+        if self.state == 3:
+            if "В казне" in text:
+                self.state = 0
+                self.send(self.chats[SUPERGROUP], "Не из чего строить!")
+                return
+
+            self.forward(self.chats[GAME], message.id, self.chats[SUPERGROUP])
+
+            if self.times > 0:
+                return
+
+            self.state = 0
+            self.send(self.chats[SUPERGROUP], "Все!")
+
+        if "Слишком много" in message.message:
+            self.monster = time.time() + MONSTER_COOLDOWN
+            return False
+
+    def group(self, message):
+        """ todo """
+        parts = message.message.split(": ")
+
+        # Прямая команда должна состоять из двух частей, разделенных двоеточием
+        if len(parts) == 2:
+            text, times = count_help(parts[0], parts[1],
+                                     self.flag, self.level, self.user)
+
+            if text == "/stop":
+                self.state = -1
+                return
+
+            if text == "/go":
+                self.state = 0
+                return
+
+            delay = 90
+            if "/repair" or "/build" in text:
+                delay = 310
+
+            self.state = 3
+            self.times = times
+
+            for _ in range(times):
+                # Команда подходит, отправляем
+                self.send(self.chats[GAME], text)
+                self.logger.sleep(delay, "Сон прямого контроля")
+                self.times = self.times - 1
+
+            return
+
+        # Игнорируем все, кроме прямых приказов и боев
+        text = message.message
+        command = get_fight_command(text)
+        if not command:
+            return
+
+        # Не помогаем на побережье, если не контролируем побережье
+        if SHORE in text:
+            if self.flag not in text:
+                return
+
+        # Не помогаем в Пустошах, если не из Пустошей
+        if not go_wasteland(self.flag, text):
+            return
+
+        # Не помогаем, если боев на сегодня слишком много
+        if time.time() < self.monster:
+            return False
+
+        self.logger.log("Иду на помощь: {}".format(command))
+        self.send(self.chats[GAME], command)
+        self.send(self.chats[SUPERGROUP], "+")
+        return
+
+    def send(self, entity, text):
+        """ Сокращение, потому что бот всегда использует Маркдаун """
+        self.send_message(entity, text, markdown=True)  # todo: обновить с новым Телетоном
+
+    def forward(self, from_entity, message_id, to_entity):
+        """ Forwards a single message from an entity to entity """
+        self.invoke(
+            ForwardMessagesRequest(
+                get_input_peer(from_entity),
+                [message_id],
+                [generate_random_long()],
+                get_input_peer(to_entity)
+            )
+        )
+
+    def update_chats(self):
+        """ Обновляет список чатов на основе 100 последних диалогов """
+        _, entities = self.get_dialogs(100)
+
+        for entity in entities:
+            if entity.id in CHATS:
+                self.chats[entity.id] = entity
+
+            elif entity.id == SUPERGROUP:
+                self.chats[SUPERGROUP] = entity
+
+        return True
 
     def get_message(self, entity, repeat=True):
         """
@@ -175,14 +342,3 @@ class FarmBot(TelegramClient):
             content = message.__class__.__name__
 
         return message, content
-
-    def forward_message(self, from_entity, message_id, to_entity):
-        """ Forwards a single message from an entity to entity """
-        self.invoke(
-            ForwardMessagesRequest(
-                get_input_peer(from_entity),
-                [message_id],
-                [generate_random_long()],
-                get_input_peer(to_entity)
-            )
-        )
