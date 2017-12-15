@@ -37,9 +37,9 @@ class FarmBot(TelegramClient):
     """ Объект бота для каждой сессии """
 
     # pylint: disable=too-many-instance-attributes
+    # pylint: disable=too-many-return-statements
 
     def __init__(self, user, data, silent=True):
-        # todo: комментарии к каждому атрибуту
         # Если выводим в лог, очищаем его и начинаем с задержкой
         if silent:
             time.sleep(random.random() * 30)
@@ -51,17 +51,24 @@ class FarmBot(TelegramClient):
             log_file = None
 
         # Добавляем логгер
-        self.user = user
         self.logger = Logger(user, log_file, data['girl'])
 
         # Создаем файл сессии и устанавливаем параметры Телеграма
         # todo: here or later
         super().__init__("sessions/" + user, API_ID, API_HASH)
-        self.chats = {}
-        self.phone = data['phone']
-        self.user_id = 0
 
-        # Устанавливаем состояние
+        # Массив с entity, которые будут использоваться для запросов через Телетон
+        self.chats = {}
+
+        # Телефон аккаунта
+        self.phone = data['phone']
+
+        # Название сессии для прямых команд боту
+        self.user = user
+
+        # self.user_id = 0
+
+        # Состоятние бота
         # 0 — ничего не делаю
         # 1 — занят
         # 2 — жду ветер
@@ -69,28 +76,37 @@ class FarmBot(TelegramClient):
         # -1 — заблокирован
         self.state = 0
 
+        # Количество раз, которое осталось отправить прямую команду
         self.times = 0
 
-        # Устанавливаем важные параметры
-        self.exhaust = time.time()         # время до следующей передышки
-        self.locations = LOCATIONS.copy()  # все локации
-        self.monster = time.time()         # время до сражения с монстрами
-        self.order = None                  # приказ из Супергруппы
-        self.status = None                 # статус бота до и после битвы
-        self.primary = PLUS_ONE[ATTACK]    # основной атрибут
-
+        # Время до следующей передышки
+        self.exhaust = time.time()
+        
+        # Все локации
+        self.locations = LOCATIONS.copy()
         # Перезаписываем шансы локаций, если они указаны
         if "adventures" in data:
             self.locations[2].command = data["adventures"]
 
-        # Запоминаем, какую характеристику увеличивать
+        # Время до следующего дня с походами к монстрам
+        self.monster = time.time()
+
+        # Последний приказ из Супергруппы
+        self.order = None
+
+        # Основной атрибут для увеличения каждый уровень
+        self.primary = PLUS_ONE[ATTACK]
+        # Перезаписываем характеристику, если она указана
         if LEVEL_UP in data:
             self.primary = PLUS_ONE[data[LEVEL_UP]]
 
+        # Статус бота перед битвой
+        self.status = None
+
         # Флаг, уровень и обмундирование определим позднее
+        self.equipment = {}
         self.flag = None
         self.level = 0
-        self.equipment = {}
 
         # Если запускаем в Виндоуз, переименовываем окно
         if os.name == 'nt':
@@ -105,7 +121,7 @@ class FarmBot(TelegramClient):
 
         self.update_chats()
         self.add_update_handler(self.update_handler)
-        self.user_id = self.get_me().id
+        # self.user_id = self.get_me().id
 
     def connect_with_code(self):
         """ Подключается к Телеграму и запрашивает код """
@@ -202,10 +218,22 @@ class FarmBot(TelegramClient):
 
             self.state = 0
             self.send(self.chats[SUPERGROUP], "Все!")
+            return
 
         if "Слишком много" in message.message:
             self.monster = time.time() + MONSTER_COOLDOWN
             return False
+
+        if "/level_up" in message.message:
+            self.logger.log("Ух-ты, новый уровень!")
+            self.send(self.chats[GAME], "/level_up")
+            return
+
+        if "какую характеристику ты" in message.message:
+            self.send(self.chats[GAME], self.primary)
+            self.level += 1
+            self.send(self.chats[SUPERGROUP], "Новый уровень: `{}`!".format(self.level))
+            return
 
     def group(self, message):
         """ todo """
