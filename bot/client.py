@@ -32,7 +32,9 @@ class TelethonClient(TelegramClient):
     def connect_with_code(self):
         """ Подключается к Телеграму и запрашивает код """
         # Подключаемся к Телеграму
-        self.connect()
+        connected = self.connect()
+        if not connected:
+            raise ConnectionError
 
         # Если Телеграм просит код, вводим его и умираем
         # Каждый отдельный аккаунт запускаем через -l
