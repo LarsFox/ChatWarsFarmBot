@@ -7,7 +7,7 @@ import sys
 
 from bot.data import WAR, WAR_COMMANDS, REGROUP, CHATS, WIND
 from modules.helpers import get_equipment
-from sessions import SUPERGROUP_ID
+from sessions import SUPERGROUP
 
 
 class Updater(object):
@@ -56,7 +56,7 @@ class Updater(object):
             if name:
                 self.chats[name] = entity
 
-            elif entity.id == SUPERGROUP_ID:
+            elif entity.id == SUPERGROUP:
                 self.chats['group'] = entity
 
             # self.client.get_message(entity, False)
