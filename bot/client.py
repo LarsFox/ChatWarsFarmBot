@@ -3,6 +3,7 @@
 Адаптированный клиент Телетона
 """
 
+import datetime
 import os
 import random
 import sys
@@ -14,19 +15,19 @@ from telethon.errors import RPCError
 from telethon.helpers import generate_random_long
 from telethon.tl.functions.messages.forward_messages import (
     ForwardMessagesRequest)
-from telethon.tl.types import UpdateNewMessage
+from telethon.tl.types import UpdateNewMessage, UpdateShort
 from telethon.utils import get_input_peer
 # from telethon.tl.functions.messages import ReadHistoryRequest
 # from telethon.utils import get_input_peer
 
 from bot.data import (
     CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
-    PLUS_ONE, LEVEL_UP, ATTACK,
-    SHORE,
-    MONSTER_COOLDOWN
+    PLUS_ONE, LEVEL_UP, ATTACK, DEFEND, HERO,
+    SHORE, WAR, WAR_COMMANDS, EQUIP_ITEM,
+    COOLDOWN, MONSTER_COOLDOWN, REGROUP
 )
 from bot.helpers import (
-    count_help, get_fight_command, go_wasteland
+    count_help, get_equipment, get_fight_command, get_flag, get_level, go_wasteland
 )
 from bot.locations import LOCATIONS
 from bot.logger import Logger
@@ -38,6 +39,8 @@ class FarmBot(TelegramClient):
 
     # pylint: disable=too-many-instance-attributes
     # pylint: disable=too-many-return-statements
+    # pylint: disable=too-many-branches
+    # todo: remove branches and check
 
     def __init__(self, user, data, silent=True):
         # Если выводим в лог, очищаем его и начинаем с задержкой
@@ -73,6 +76,7 @@ class FarmBot(TelegramClient):
         # 1 — занят
         # 2 — жду ветер
         # 3 — выполняю прямую команду
+        # 4 — готовлюсь к бою
         # -1 — заблокирован
         self.state = 0
 
@@ -81,7 +85,13 @@ class FarmBot(TelegramClient):
 
         # Время до следующей передышки
         self.exhaust = time.time()
-        
+
+        # Монстр для сражения — нет гарантии в 100%, что всем монстрам помогут
+        self.fight = None
+
+        # Последняя локация
+        self.location = 0
+
         # Все локации
         self.locations = LOCATIONS.copy()
         # Перезаписываем шансы локаций, если они указаны
@@ -100,9 +110,6 @@ class FarmBot(TelegramClient):
         if LEVEL_UP in data:
             self.primary = PLUS_ONE[data[LEVEL_UP]]
 
-        # Статус бота перед битвой
-        self.status = None
-
         # Флаг, уровень и обмундирование определим позднее
         self.equipment = {}
         self.flag = None
@@ -116,17 +123,53 @@ class FarmBot(TelegramClient):
         self.logger.log("Сеанс {} открыт".format(user))
 
     def start(self):
-        """ todo """
+        """ Главное древо работы """
+        # Подключаемся
         self.connect_with_code()
 
+        # Записываем важные entity
         self.update_chats()
+
+        # Добавляем обработчик входящих событий
         self.add_update_handler(self.update_handler)
-        # self.user_id = self.get_me().id
+
+        # Определяем изначальные значения
+        while not self.equipment and not self.flag and not self.level:
+            self.send(self.chats[GAME], "/hero")
+            time.sleep(5)
+            self.send(self.chats[GAME], "/inv")
+            time.sleep(10)
+
+        # Начинаем отправлять команды
+        while True:
+            # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
+            now = datetime.datetime.utcnow()
+
+            # С 47-й минуты выходим в бой
+            if (now.hour) % 4 == 0 and now.minute >= 54:
+                if self.state != 4 and self.state != 5:
+                    self.battle(DEFEND)
+
+            # Отправляем отчет, но только один раз
+            elif (now.hour) % 4 == 1 and now.minute <= 15:
+                if self.state != 0:
+                    self.state = 0
+                    self.send(self.chats[GAME], "/report")
+                    self.send(self.chats[SUPERGROUP], self.order)
+                    self.order = None
+
+            else:
+                if time.time() > self.exhaust:
+                    self.send_locations()
+
+            self.logger.sleep(105, "Теперь сплю две минуты", False)
 
     def connect_with_code(self):
         """ Подключается к Телеграму и запрашивает код """
         # Подключаемся к Телеграму
-        self.connect()
+        connected = self.connect()
+        if not connected:
+            raise ConnectionError
 
         # Если Телеграм просит код, вводим его и умираем
         # Каждый отдельный аккаунт запускаем через -l
@@ -155,28 +198,32 @@ class FarmBot(TelegramClient):
             # Выходим, чтобы запросить код в следующем боте
             sys.exit("Код верный! Перезапускай {}.".format(self.user))
 
-    def update_handler(self, update):
+    def update_handler(self, tg_updates):
         """ Получает обновления от Телетона и обрабатывает их """
         if self.state == -1:
             return
 
-        if isinstance(update, UpdateNewMessage):
-            message = update.message
+        if isinstance(tg_updates, UpdateShort):
+            return
 
-            if message.from_id == TELEGRAM:
-                self.telegram(message)
+        for update in tg_updates.updates:
+            if isinstance(update, UpdateNewMessage):
+                message = update.message
 
-            elif message.from_id == GAME:
-                self.game(message)
+                if message.from_id == TELEGRAM:
+                    self.telegram(message)
 
-            elif message.from_id == SUPERGROUP:
-                self.group(message)
+                elif message.from_id == GAME:
+                    self.game(message)
 
-            elif message.from_id == TRADE or message.from_id == ENOT:
-                pass # todo: read
+                elif message.from_id == SUPERGROUP:
+                    self.group(message)
 
-            elif message.from_id == CAPTCHA:
-                pass # todo: resend
+                elif message.from_id == TRADE or message.from_id == ENOT:
+                    pass # todo: read
+
+                elif message.from_id == CAPTCHA:
+                    pass # todo: resend
 
 
     def telegram(self, message):
@@ -191,21 +238,56 @@ class FarmBot(TelegramClient):
         # Сообщения с ветром самые приоритетные
         if "завывает" in text:
             self.state = 2
-            return
 
         # На приключении
-        if "сейчас занят другим приключением" in text:
+        elif "сейчас занят другим приключением" in text:
             self.state = 1
-            return
 
         # Караваны
-        if "/go" in text:
+        elif "/go" in text:
             self.state = 1
             self.send_message(self.chats[GAME], "/go")
-            return
+
+        # Устал
+        elif "мало единиц выносливости" in text:
+            self.logger.log("~Выдохся, поживу без приключений пару часов")
+            exhaust = time.time() + COOLDOWN + random.random() * 3600
+            self.exhaust = exhaust
+
+        # Оповещаем о потере
+        elif "Вы потеряли" in text:
+            self.forward(self.chats[GAME], message.id, self.chats[SUPERGROUP])
+
+        # Ответ на /hero
+        elif "🏛Твои умения: " in text:
+            self.level = get_level(text)
+            self.flag = get_flag(text)
+
+        # Ответ на /inv
+        elif "Содержимое рюкзака" in text:
+            self.equipment = get_equipment(text)
+
+        # Готовимся к атаке конкретной точки
+        elif "вояка!" in text:
+            self.send(self.chats[GAME], self.order)
+
+        # Готовимся к защите конкретной точки
+        elif "защитник!" in text:
+            self.send(self.chats[GAME], self.flag)
+
+        # Готовимся к защите
+        elif "Ты приготовился" in text:
+            if "защите" in text:
+                self.equip(DEFEND)
+            elif "атаке" in text:
+                self.equip(ATTACK)
+
+        # Квесты
+        elif "Ты отправился" in text:
+            self.state = 1
 
         # Прямые команды
-        if self.state == 3:
+        elif self.state == 3:
             if "В казне" in text:
                 self.state = 0
                 self.send(self.chats[SUPERGROUP], "Не из чего строить!")
@@ -218,22 +300,39 @@ class FarmBot(TelegramClient):
 
             self.state = 0
             self.send(self.chats[SUPERGROUP], "Все!")
-            return
 
-        if "Слишком много" in message.message:
+        # Слишком много боев
+        elif "Слишком много" in text:
             self.monster = time.time() + MONSTER_COOLDOWN
-            return False
 
-        if "/level_up" in message.message:
+        # Ответ на квесты
+        elif "🌲Лес" in text:
+            self.locations[self.location].update(self.level, text)
+
+        # Оповещаем о беде
+        elif "питомец в опасности!" in text:
+            self.forward(self.chats[SUPERGROUP], message.id, self.chats[SUPERGROUP])
+
+        # Просим ручной выбор класса
+        elif "Определись со специализацией" in text:
+            self.send(self.chats[SUPERGROUP], "Выберите мне класс!")
+
+        # Запрашиваем повышение уровня
+        elif "/level_up" in text:
             self.logger.log("Ух-ты, новый уровень!")
             self.send(self.chats[GAME], "/level_up")
-            return
 
-        if "какую характеристику ты" in message.message:
+        # Выбираем основную характеристику
+        elif "какую характеристику ты" in text:
             self.send(self.chats[GAME], self.primary)
             self.level += 1
             self.send(self.chats[SUPERGROUP], "Новый уровень: `{}`!".format(self.level))
-            return
+
+        else:
+            self.state = 0
+
+        self.logger.log("Тест: мое состояние == " + str(self.state))
+        return
 
     def group(self, message):
         """ todo """
@@ -269,6 +368,26 @@ class FarmBot(TelegramClient):
 
         # Игнорируем все, кроме прямых приказов и боев
         text = message.message
+
+        # Кто-то другой взял монстра, перезаписываем
+        if text == "+":
+            self.fight = None
+            return
+
+        # Проверяем, является ли команда приказом развернуться
+        if text == REGROUP:
+            self.order = None
+            self.battle(DEFEND)
+            return
+
+        # Приказ выйти в бой
+        order = WAR.get(WAR_COMMANDS.get(text.lower()))
+        if order:
+            self.order = order
+            self.battle(ATTACK)
+            return
+
+        # Команда сразиться с монстром
         command = get_fight_command(text)
         if not command:
             return
@@ -283,17 +402,112 @@ class FarmBot(TelegramClient):
             return
 
         # Не помогаем, если боев на сегодня слишком много
-        if time.time() < self.monster:
-            return False
+        if time.time() < self.monster and self.state != 0:
+            return
 
-        self.logger.log("Иду на помощь: {}".format(command))
-        self.send(self.chats[GAME], command)
-        self.send(self.chats[SUPERGROUP], "+")
+        # Устанавливаем монстра
+        self.fight = command
+        if self.fight:
+            self.logger.log("Иду на помощь: {}".format(command))
+            self.send(self.chats[GAME], command)
+            self.send(self.chats[SUPERGROUP], "+")
+            self.fight = ""
+        return
+
+    def send_locations(self):
+        """ Отправляется во все локации """
+        for i, location in enumerate(self.locations):
+            self.location = i
+            # self.send(self.chats[GAME], "/hero")
+
+            # Пропускаем, если время идти в локацию еще не пришло
+            if time.time() - location.after < 0:
+                continue
+
+            # Если требует времени, идем как приключение
+            if not location.instant:
+                self.send(self.chats[GAME], "🗺 Квесты")
+
+            # Пропускаем, если шанс говорит не идти
+            if not location.travel:
+                self.logger.sleep(10, "Пропускаю " + location.console)
+                continue
+
+            # Выбираем, куда пойдем
+            emoji = location.emoji
+
+            # Отправляем сообщение с локацией
+            self.send(self.chats[GAME], emoji)
+
+            # Откладываем следующий поход
+            self.logger.log("Следующий {} через {:.3f} минут".format(
+                location.console,
+                location.postpone()
+            ))
+
+            # Локация не требует затрат времени, пропускаем задержку
+            if location.instant:
+                self.logger.sleep(5, "Сплю после мгновенной команды")
+                continue
+
+            else:
+                # self.logger #todo HERE
+                self.logger.sleep(5, "Сплю после мгновенной команды")
+            # И ради интереса запрашиваем свой профиль
+            if random.random() < 0.4:
+                self.send(self.chats[GAME], "/hero")
+
+        return
+
+    def battle(self, order):
+        """ Переходит в режим атаки или защиты """
+        sent = self.send(self.chats[GAME], HERO)
+        if not sent:
+            return
+
+        time.sleep(2)
+        self.state = 4
+
+        sent = self.send(self.chats[GAME], order)
+        if not sent:
+            return
+
+        time.sleep(2)
+        self.equip(order)
+
+    def equip(self, state):
+        """
+        Надевает указанные предметы
+        state: ключ, по которому будут выбраны предметы
+        """
+        for _, equip in self.equipment.items():
+            if len(equip) == 2:
+                item = EQUIP_ITEM.format(equip[state])
+                self.logger.log("Надеваю: {}".format(item))
+
+                sent = self.send(self.chats[GAME], item)
+                if not sent:
+                    return
+
+                # todo: time.sleep(random?)
+
+        self.logger.log("Завершаю команду {}".format(state))
         return
 
     def send(self, entity, text):
         """ Сокращение, потому что бот всегда использует Маркдаун """
+        # todo: time.sleep(random?)
+        # Не отправляем ничего в оффлайне
+        if self.state == -1:
+            return False
+
+        # Не отправляем игре в ветер
+        if entity == self.chats[GAME] and self.state == 2:
+            return False
+
+        self.logger.log("Отправляю " + text)
         self.send_message(entity, text, markdown=True)  # todo: обновить с новым Телетоном
+        return True
 
     def forward(self, from_entity, message_id, to_entity):
         """ Forwards a single message from an entity to entity """
@@ -317,7 +531,7 @@ class FarmBot(TelegramClient):
             elif entity.id == SUPERGROUP:
                 self.chats[SUPERGROUP] = entity
 
-        return True
+        return
 
     def get_message(self, entity, repeat=True):
         """

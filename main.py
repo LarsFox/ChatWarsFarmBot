@@ -45,7 +45,6 @@ class Main(object):
 
         -s: выбираем куда логгировать: в файл или в консоль
         -l: проверяем логин и вводим телефон (только для одного пользователя)
-        -c: показываем код в запущенном ТГ (только для одного пользователя)
         -r: «перезапуск»: все действия откладываются, чтобы не спамить
 
         все остальные аргументы будут приняты как имена сессии
@@ -60,19 +59,6 @@ class Main(object):
             bot = FarmBot(user, params, self.silent)
             bot.connect()
             sys.exit("Код уже был введен!")
-
-        # -c
-        if self.code:
-            if len(self.users) > 1:
-                sys.exit("Могу показать код только у одного пользователя")
-
-            user = self.users[0]
-            params = SESSIONS.get(user)
-            bot = FarmBot(user, params, self.silent)
-            bot.connect()
-            # _, message = bot.client.get_message(bot.updater.chats["telegram"])
-            # sys.exit(message[:23])
-            # todo
 
         # Остальной набор
         # jobs = []
@@ -102,7 +88,7 @@ class Main(object):
                 if self.reboots[user]:
                     time.sleep(r.random() * 60)
 
-                bot.connect()
+                bot.start()
 
             except (ValueError, OSError,
                     telethon.errors.RPCError,
