@@ -6,7 +6,7 @@
 import re
 
 from bot.data import (
-    ATTACK, DEFEND, REGROUP, RIGHT, LEFT, EQUIP, WAR, WAR_COMMANDS, GENITIVES, FIGHT)
+    ATTACK, DEFEND, RIGHT, LEFT, EQUIP, WAR, WAR_COMMANDS, GENITIVES, FIGHT)
 
 
 def go_wasteland(flag, message):
@@ -80,7 +80,7 @@ def validate_prefix(prefix, flag, level, user):
     """
     args = prefix.split()
     # Игнорируем, если не сходится ни имя, ни замок, а команда не для всех
-    if args[0] not in (flag, user, REGROUP):
+    if args[0] not in (flag, user, '!!'):
         if WAR[WAR_COMMANDS[args[0]]] != flag:
             return False
 

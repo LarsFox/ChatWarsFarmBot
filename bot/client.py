@@ -22,7 +22,7 @@ from bot.data import (
     CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
     PLUS_ONE, LEVEL_UP, ATTACK, DEFEND, HERO,
     SHORE, WAR, WAR_COMMANDS,
-    COOLDOWN, MONSTER_COOLDOWN, REGROUP, HELLO, VERBS
+    COOLDOWN, MONSTER_COOLDOWN, HELLO, VERBS
 )
 from bot.helpers import (
     count_help, get_equipment, get_fight_command, get_flag, get_level, go_wasteland
@@ -92,6 +92,9 @@ class FarmBot(TelegramClient):
         # Последняя локация-квест
         self.adventure = None
 
+        # Монстр, с которым предстоит сразиться
+        self.fight = None
+
         # Последняя локация
         self.location = 0
 
@@ -158,6 +161,7 @@ class FarmBot(TelegramClient):
         if self.state == -1:
             return
 
+        # todo: sometimes does not read supergroup
         if isinstance(update, UpdateNewMessage):
             self.acknowledge(update.message, update.message.from_id)
 
@@ -229,8 +233,6 @@ class FarmBot(TelegramClient):
 
         # Начинаем отправлять команды
         while True:
-            # self.logger.sleep(105, '~Сплю минуту в начале', False)
-
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
@@ -384,7 +386,7 @@ class FarmBot(TelegramClient):
             self.send(self.chats[SUPERGROUP], 'Новый уровень: `{}`!'.format(self.level))
 
         # Пропускаем ситуацию, когда надеть нечего
-        elif '[невозможно]' in text:
+        elif 'невозможно выполнить' in text:
             pass
 
         else:
@@ -402,6 +404,13 @@ class FarmBot(TelegramClient):
 
     def group(self, message):
         ''' Обрабатывает сообщение группы '''
+        text = message.message
+
+        # Кто-то другой взял монстра, перезаписываем
+        if text == '+':
+            self.fight = None
+            return
+
         parts = message.message.split(': ')
 
         # Прямая команда должна состоять из двух частей, разделенных двоеточием
@@ -437,20 +446,6 @@ class FarmBot(TelegramClient):
 
             return
 
-        # Игнорируем все, кроме прямых приказов и боев
-        text = message.message
-
-        # Кто-то другой взял монстра, перезаписываем
-        if text == '+':
-            return
-
-        # Проверяем, является ли команда приказом развернуться
-        if text == REGROUP:
-            self.logger.log('Перегруппировываюсь')
-            self.order = None
-            self.battle(DEFEND)
-            return
-
         # Приказ выйти в бой
         order = WAR.get(WAR_COMMANDS.get(text.lower()))
         if order:
@@ -477,10 +472,15 @@ class FarmBot(TelegramClient):
         if time.time() < self.monster and self.state != 0:
             return
 
-        # Устанавливаем монстра
-        self.logger.log('Иду на помощь: {}'.format(command))
-        self.send(self.chats[GAME], command)
-        self.send(self.chats[SUPERGROUP], '+')
+        self.fight = command
+        # Спим случайное время, чтобы помощник был только один
+        time.sleep((120 * random.random()))
+
+        # Идем в бой, если никто другой не успел
+        if self.fight:
+            self.logger.log('Иду на помощь: {}'.format(command))
+            self.send(self.chats[GAME], command)
+            self.send(self.chats[SUPERGROUP], '+')
         return
 
     def send_locations(self):
