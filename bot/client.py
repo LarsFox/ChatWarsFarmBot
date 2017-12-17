@@ -13,10 +13,10 @@ import time
 from telethon import TelegramClient
 from telethon.errors import SessionPasswordNeededError
 from telethon.tl.functions.messages import ForwardMessagesRequest
-from telethon.tl.types import UpdateNewMessage, UpdateNewChannelMessage
+from telethon.tl.types import (
+    UpdateNewMessage, UpdateNewChannelMessage,
+    UpdateShortChatMessage, UpdateShortMessage)
 from telethon.utils import get_input_peer
-# from telethon.tl.functions.messages import ReadHistoryRequest
-# from telethon.utils import get_input_peer
 
 from bot.data import (
     CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
@@ -160,6 +160,9 @@ class FarmBot(TelegramClient):
 
         if isinstance(update, UpdateNewMessage):
             self.acknowledge(update.message)
+
+        elif isinstance(update, UpdateShortChatMessage, UpdateShortMessage):
+            self.acknowledge(update)
 
         elif isinstance(update, UpdateNewChannelMessage):
             if update.message.to_id.channel_id != SUPERGROUP:
@@ -389,7 +392,7 @@ class FarmBot(TelegramClient):
 
             self.state = 0
 
-        self.logger.log('Тест: мое состояние == ' + str(self.state))
+        self.logger.log('Состояние == ' + str(self.state))
         return
 
     def group(self, message):
