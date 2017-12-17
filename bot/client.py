@@ -435,12 +435,15 @@ class FarmBot(TelegramClient):
                 self.send(self.chats[SUPERGROUP], 'Ну вот, опять работать!')
                 return
 
-            delay = 10
+            delay = 2
             if '/repair' in text or '/build' in text:
-                delay = 310
+                delay = 300
 
             self.state = 3
             self.times = times
+
+            if times > 1:
+                delay += 10
 
             for _ in range(times):
                 # Команда подходит, отправляем
