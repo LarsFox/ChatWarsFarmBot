@@ -419,16 +419,20 @@ class FarmBot(TelegramClient):
                                      self.flag, self.level, self.user)
 
             self.logger.log('Прямая команда: ' + text)
-            if text == '/stop':
-                self.logger.log('Отключаюсь')
-                self.send(self.chats[SUPERGROUP], 'Отключаюсь')
+            if text == '/sleep':
+                self.logger.log('Сплю, капитан!')
+                self.send(self.chats[SUPERGROUP], 'Сплю, капитан!')
                 self.state = -1
                 return
 
-            if text == '/go':
+            if text == '/wake':
+                if self.state == 0:
+                    self.send(self.chats[SUPERGROUP], 'Я не сплю!')
+                    return
+
                 self.state = 0
-                self.logger.log('Включаюсь')
-                self.send(self.chats[SUPERGROUP], 'Включаюсь')
+                self.logger.log('Проснулся, капитан!')
+                self.send(self.chats[SUPERGROUP], 'Ну вот, опять работать!')
                 return
 
             delay = 10
