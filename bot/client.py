@@ -56,7 +56,7 @@ class FarmBot(TelegramClient):
 
         # Рассинхронизируем боты
         if log_file:
-            self.logger.sleep(60, 'Сон рассинхронизации', False)
+            self.logger.sleep(60, 'Сон рассинхронизации: {}', False)
 
         # Создаем файл сессии и устанавливаем параметры Телеграма
         # todo: here or later
@@ -454,7 +454,7 @@ class FarmBot(TelegramClient):
                 # Команда подходит, отправляем
                 self.times -= 1
                 self.send(self.chats[GAME], text)
-                self.logger.sleep(delay, 'Сон прямого контроля')
+                self.logger.sleep(delay, 'Сон прямого контроля: {}')
 
             return
 
@@ -499,6 +499,7 @@ class FarmBot(TelegramClient):
         ''' Отправляется во все локации '''
         for i, location in enumerate(self.locations):
             self.location = i
+            self.logger.log("Локация " + str(i))
             # self.send(self.chats[GAME], '/hero')
 
             # Пропускаем, если время идти в локацию еще не пришло
