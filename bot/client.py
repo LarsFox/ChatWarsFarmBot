@@ -169,8 +169,8 @@ class FarmBot(TelegramClient):
             self.send_read_acknowledge(self.chats[SUPERGROUP], update.message)
 
         else:
-            print(type(update))
-            # pass
+            # print(type(update))
+            pass
 
     def acknowledge(self, message):
         ''' Отправляет сообщение в нужную функцию '''
