@@ -56,7 +56,7 @@ class FarmBot(TelegramClient):
 
         # Рассинхронизируем боты
         if log_file:
-            self.logger.sleep(60, 'Сон рассинхронизации: {}', False)
+            self.logger.sleep(60 * random.random(), 'Сон рассинхронизации: {}', False)
 
         # Создаем файл сессии и устанавливаем параметры Телеграма
         # todo: here or later
