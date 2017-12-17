@@ -96,8 +96,8 @@ class FarmBot(TelegramClient):
         # Время до следующей передышки
         self.exhaust = time.time()
 
-        # Монстр для сражения — нет гарантии в 100%, что всем монстрам помогут
-        self.fight = None
+        # Последняя локация-квест
+        self.adventure = None
 
         # Последняя локация
         self.location = 0
@@ -410,6 +410,13 @@ class FarmBot(TelegramClient):
             pass
 
         else:
+            command = get_fight_command(text)
+            if command:
+                if self.adventure == SHORE:
+                    self.send(self.chats[SUPERGROUP], self.flag + SHORE + "! " + command)
+                else:
+                    self.send(self.chats[SUPERGROUP], self.flag + ' ' + command)
+
             self.state = 0
 
         self.logger.log('Тест: мое состояние == ' + str(self.state))
@@ -455,7 +462,6 @@ class FarmBot(TelegramClient):
 
         # Кто-то другой взял монстра, перезаписываем
         if text == '+':
-            self.fight = None
             return
 
         # Проверяем, является ли команда приказом развернуться
@@ -492,12 +498,9 @@ class FarmBot(TelegramClient):
             return
 
         # Устанавливаем монстра
-        self.fight = command
-        if self.fight:
-            self.logger.log('Иду на помощь: {}'.format(command))
-            self.send(self.chats[GAME], command)
-            self.send(self.chats[SUPERGROUP], '+')
-            self.fight = ''
+        self.logger.log('Иду на помощь: {}'.format(command))
+        self.send(self.chats[GAME], command)
+        self.send(self.chats[SUPERGROUP], '+')
         return
 
     def send_locations(self):
@@ -510,8 +513,12 @@ class FarmBot(TelegramClient):
             if time.time() - location.after < 0:
                 continue
 
+            # Выбираем, куда пойдем
+            emoji = location.emoji
+
             # Если требует времени, идем как приключение
             if not location.instant:
+                self.adventure = emoji
                 self.send(self.chats[GAME], '🗺 Квесты')
                 self.logger.sleep(5, 'Сплю после отправки квестов')
 
@@ -519,9 +526,6 @@ class FarmBot(TelegramClient):
             if not location.travel:
                 self.logger.sleep(10, 'Пропускаю ' + location.console)
                 continue
-
-            # Выбираем, куда пойдем
-            emoji = location.emoji
 
             # Отправляем сообщение с локацией
             self.send(self.chats[GAME], emoji)
