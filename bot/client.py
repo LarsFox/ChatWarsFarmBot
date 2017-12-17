@@ -11,13 +11,9 @@ import time
 
 
 from telethon import TelegramClient
-from telethon.errors import RPCError
-from telethon.helpers import generate_random_long
-from telethon.tl.functions.messages.forward_messages import (
-    ForwardMessagesRequest)
-# from telethon.tl.functions.messages.read_message_contents import (
-#     ReadMessageContentsRequest)
-from telethon.tl.types import UpdateNewMessage, UpdateShort, UpdateShortChatMessage, UpdatesTg
+from telethon.errors import SessionPasswordNeededError
+from telethon.tl.functions.messages import ForwardMessagesRequest
+from telethon.tl.types import UpdateNewMessage, UpdateNewChannelMessage
 from telethon.utils import get_input_peer
 # from telethon.tl.functions.messages import ReadHistoryRequest
 # from telethon.utils import get_input_peer
@@ -64,7 +60,7 @@ class FarmBot(TelegramClient):
 
         # Создаем файл сессии и устанавливаем параметры Телеграма
         # todo: here or later
-        super().__init__('sessions/' + user, API_ID, API_HASH)
+        super().__init__('sessions/' + user, API_ID, API_HASH, update_workers=4)
 
         # Массив с entity, которые будут использоваться для запросов через Телетон
         self.chats = {}
@@ -76,9 +72,6 @@ class FarmBot(TelegramClient):
         self.user = user
 
         # self.user_id = 0
-
-        # Номер последнего сообщения в супергруппе. Используем для получения всех сообщений
-        self.supergroup_last = 0
 
         # Состоятние бота
         # 0 — ничего не делаю
@@ -153,41 +146,54 @@ class FarmBot(TelegramClient):
                 try:
                     code_ok = self.sign_in(self.phone, code)
 
-                except RPCError as err:
-                    if err.password_required:
-                        verified = input(
-                            'Введите пароль для двусторонней аутентификации: ')
-
-                        code_ok = self.sign_in(password=verified)
-
-                    else:
-                        raise err
+                except SessionPasswordNeededError:
+                    verified = input('Введите пароль для двусторонней аутентификации: ')
+                    code_ok = self.sign_in(password=verified)
 
             # Выходим, чтобы запросить код в следующем боте
             sys.exit('Код верный! Перезапускай {}.'.format(self.user))
 
-    def update_handler(self, tg_update):
+    def update_handler(self, update):
         ''' Получает обновления от Телетона и обрабатывает их '''
         if self.state == -1:
             return
 
-        if isinstance(tg_update, UpdatesTg):
-            for update in tg_update.updates:
-                if not isinstance(update, UpdateNewMessage):
-                    continue
+        if isinstance(update, UpdateNewMessage):
+            self.acknowledge(update.message)
 
-                if isinstance(update, UpdateNewMessage):
-                    self.acknowledge(update.message)
+        elif isinstance(update, UpdateNewChannelMessage):
+            if update.message.to_id.channel_id != SUPERGROUP:
+                return
 
-        elif isinstance(tg_update, UpdateShortChatMessage):
-            self.group(tg_update)
-
-        elif isinstance(tg_update, UpdateShort):
-            pass
+            self.group(update.message)
+            self.send_read_acknowledge(self.chats[SUPERGROUP], update.message)
 
         else:
-            # print(tg_update)
-            pass
+            print(type(update))
+            # pass
+
+    def acknowledge(self, message):
+        ''' Отправляет сообщение в нужную функцию '''
+        # todo
+        if message.from_id == TELEGRAM:
+            self.telegram(message)
+            self.send_read_acknowledge(self.chats[TELEGRAM], message)
+
+        elif message.from_id == GAME:
+            self.game(message)
+            self.send_read_acknowledge(self.chats[GAME], message)
+
+        elif message.from_id == TRADE:
+            self.forward(self.chats[TRADE], message, self.chats[ENOT])
+            self.send_read_acknowledge(self.chats[TRADE], message)
+
+        elif message.from_id == ENOT:
+            self.send_read_acknowledge(self.chats[ENOT], message)
+
+        # todo: ask for deprecated captcha
+        elif message.from_id == CAPTCHA:
+            self.forward(self.chats[CAPTCHA], message, self.chats[GAME])
+            self.send_read_acknowledge(self.chats[CAPTCHA], message)
 
     def start(self):
         ''' Главный цикл отправки сообщений '''
@@ -207,10 +213,6 @@ class FarmBot(TelegramClient):
             self.send(self.chats[GAME], '/inv')
             time.sleep(10)
 
-        # Собираем последнее сообщение в супергруппе
-        _, messages, _ = self.get_message_history(self.chats[SUPERGROUP], limit=1)
-        self.supergroup_last = messages[0].id
-
         # Отправляем сообщение о пробуждении
         self.logger.log('Первое пробуждение')
         self.send(self.chats[SUPERGROUP], HELLO.format(
@@ -221,21 +223,10 @@ class FarmBot(TelegramClient):
 
         # Начинаем отправлять команды
         while True:
-            self.logger.sleep(105, 'Сплю минуту до', False)
+            # self.logger.sleep(105, '~Сплю минуту в начале', False)
 
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
-
-            # Собираем новые сообщения из супергруппы
-            self.logger.log('Собираю сообщения группы')
-            _, messages, _ = self.get_message_history(
-                self.chats[SUPERGROUP], min_id=self.supergroup_last)
-            self.supergroup_last = messages[-1].id
-
-            # И обрабатываем их
-            for message in messages:
-                self.group(message)
-                time.sleep(3)
 
             # С 47-й минуты выходим в бой
             if now.hour % 4 == 0 and now.minute >= 54:
@@ -258,34 +249,7 @@ class FarmBot(TelegramClient):
                 if time.time() > self.exhaust:
                     self.send_locations()
 
-            self.logger.sleep(105, 'Сплю минуту после', False)
-
-    def acknowledge(self, message):
-        ''' Отправляет сообщение в нужную функцию '''
-        # todo
-        if message.from_id == TELEGRAM:
-            self.send_read_acknowledge(self.chats[TELEGRAM], message)
-            self.telegram(message)
-
-        elif message.from_id == GAME:
-            self.send_read_acknowledge(self.chats[GAME], message)
-            self.game(message)
-
-        elif message.from_id == SUPERGROUP:
-            self.send_read_acknowledge(self.chats[SUPERGROUP], message)
-            self.group(message)
-
-        elif message.from_id == TRADE:
-            self.send_read_acknowledge(self.chats[TRADE], message)
-            self.forward(self.chats[TRADE], message, self.chats[ENOT])
-
-        elif message.from_id == ENOT:
-            self.send_read_acknowledge(self.chats[ENOT], message)
-
-        # todo: ask for deprecated captcha
-        elif message.from_id == CAPTCHA:
-            self.send_read_acknowledge(self.chats[CAPTCHA], message)
-            self.forward(self.chats[CAPTCHA], message, self.chats[GAME])
+            self.logger.sleep(105, '~Сплю минуту', False)
 
     def telegram(self, message):
         ''' Записывает полученный от Телеграма код '''
@@ -598,16 +562,15 @@ class FarmBot(TelegramClient):
             return False
 
         self.logger.log('Отправляю: ' + text)
-        self.send_message(entity, text, markdown=True)  # todo: обновить с новым Телетоном
+        self.send_message(entity, text, parse_mode='markdown')  # todo: обновить с новым Телетоном
         return True
 
     def forward(self, from_entity, message_id, to_entity):
         ''' Пересылает сообщение от entity к entity '''
-        self.invoke(
+        self(
             ForwardMessagesRequest(
                 get_input_peer(from_entity),
                 [message_id],
-                [generate_random_long()],
                 get_input_peer(to_entity)
             )
         )
