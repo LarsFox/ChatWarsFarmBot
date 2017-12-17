@@ -313,6 +313,7 @@ class FarmBot(TelegramClient):
             self.forward(self.chats[GAME], message.id, self.chats[SUPERGROUP])
 
             if self.times > 0:
+                self.logger.log("Осталось: " + str(self.times))
                 return
 
             self.state = 0
@@ -387,6 +388,10 @@ class FarmBot(TelegramClient):
 
         # Пропускаем ситуацию, когда надеть нечего
         elif 'невозможно выполнить' in text:
+            pass
+
+        # Пропускаем надевание предмета
+        elif 'Экипирован предмет:' in text:
             pass
 
         else:
@@ -552,7 +557,6 @@ class FarmBot(TelegramClient):
             return
 
         time.sleep(2)
-        self.equip(order)
 
     def equip(self, state):
         '''
