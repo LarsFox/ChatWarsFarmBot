@@ -42,7 +42,7 @@ class Location(object):
     @property
     def travel(self):
         """ Определяет, идем или не идем в локацию """
-        return random.random() > self.prob
+        return random.random() <= self.prob
 
     @property
     def emoji(self):
