@@ -10,7 +10,7 @@ import time
 from bot.data import VERBS
 
 
-LOG_STRING = '[{0:%Y-%m-%d %H:%M:%S}/{1}] {2}'
+LOG_STRING = '[{0:%Y-%m-%d %H:%M:%S} {1}] {2}'
 
 
 class Logger(object):
