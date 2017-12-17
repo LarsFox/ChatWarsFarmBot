@@ -84,7 +84,7 @@ class Adventures(Location):
 
             return command["command"]
 
-        return "/inv"
+        return "/wtb_101"
 
     def update(self, level, available):
         """ Обновляет параметры, от которых зависит выбор локации """
@@ -94,12 +94,18 @@ class Adventures(Location):
 
 
 RANDOM_COMMANDS = [
+    "/hero",
+    "/inv",
+    "/report",
+    "/trades"
     "/top",
     "/worldtop",
-    "/hero",
-    # "/report",
-    # "/inv",
-    # "/trades"
+    "/wtb_113",
+    "/wtb_115",
+    "/wtb_116",
+    "/wtb_117",
+    "/wtb_121",
+    "/wtb_179",
 ]
 
 # На индекс 2 жестко завязано обновление локаций из файла сессий
