@@ -14,7 +14,7 @@ import traceback
 import telethon
 
 from bot.client import FarmBot
-from sessions import SESSIONS
+from sessions import SESSIONS, SUPERGROUP
 
 
 class Main(object):
@@ -125,8 +125,7 @@ class Main(object):
                                                  exc_value, exc_traceback)
 
                 text = ''.join(exc)
-                # todo
-                # bot.updater.send_group(text)
+                bot.send(bot.chats[SUPERGROUP], text)
                 bot.logger.log(text)
 
                 raise err
@@ -139,6 +138,7 @@ def memory():
     """ Ограничивает потребление памяти
     https://stackoverflow.com/questions/41105733 """
     pass
+    # todo
     # resource.setrlimit(resource.RLIMIT_AS, (128 * 1024 * 1024, -1))
 
 
