@@ -590,7 +590,9 @@ class FarmBot(TelegramClient):
             return False
 
         self.logger.log('Отправляю: ' + text)
-        self.send_message(entity, text, parse_mode='markdown')  # todo: обновить с новым Телетоном
+        result = self.send_message(entity, text, parse_mode='markdown')
+        if not result:
+            raise ConnectionError
         return True
 
     def forward(self, from_entity, message_id, to_entity):
