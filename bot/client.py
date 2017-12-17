@@ -234,16 +234,22 @@ class FarmBot(TelegramClient):
                     self.battle(DEFEND)
 
             # Отправляем отчет, но только один раз
-            elif now.hour % 4 == 1 and now.minute <= 10:
+            elif now.hour % 4 == 1 and 5 <= now.minute <= 12:
                 if self.state != 0:
                     self.send(self.chats[GAME], '/report')
                     self.send(self.chats[TRADE], '/')
 
                     # Оповещаем Супергруппу о полученном приказе
                     verb = VERBS[self.logger.girl][self.state]
-                    self.send(self.chats[SUPERGROUP], verb + self.order)
+
+                    if self.order:
+                        self.send(self.chats[SUPERGROUP], verb + self.order)
+                        self.order = None
+
+                    else:
+                        self.send(self.chats[SUPERGROUP], verb + self.flag)
+
                     self.state = 0
-                    self.order = None
 
             else:
                 if time.time() > self.exhaust:
