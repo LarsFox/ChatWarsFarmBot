@@ -72,6 +72,7 @@ def get_fight_command(message):
 
     return None
 
+
 def validate_prefix(prefix, flag, level, user):
     """ Проверяет верность префикса в формате who level_from (level_to)
     who определяет, каким фармителям выполнять команду,
@@ -79,7 +80,7 @@ def validate_prefix(prefix, flag, level, user):
     level_to — максимальный
     """
     args = prefix.split()
-    # Игнорируем, если не сходится ни имя, ни замок, а команда не для всех
+    # Игнорируем, если не сходится ни имя, ни замок, и команда не для всех
     if args[0] not in (flag, user, '!!'):
         if WAR[WAR_COMMANDS[args[0]]] != flag:
             return False
@@ -94,6 +95,7 @@ def validate_prefix(prefix, flag, level, user):
         return False
 
     return True
+
 
 def count_command(args, level):
     """ Считает, сколько раз отправить команду в формате text x N
@@ -115,6 +117,7 @@ def count_command(args, level):
         return int(args[1])
 
     return 0
+
 
 def count_help(prefix, command, flag, level, user):
     """ Проверяет верность полученной команды

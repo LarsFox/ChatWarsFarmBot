@@ -264,7 +264,7 @@ class FarmBot(TelegramClient):
                 if time.time() > self.exhaust:
                     self.send_locations()
 
-            self.logger.sleep(105, '~Сплю минуту', False)
+            self.logger.sleep(105, '~Сплю минуту в состоянии == '  + str(self.state), False)
 
     def telegram(self, message):
         ''' Записывает полученный от Телеграма код '''
