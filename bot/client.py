@@ -426,9 +426,9 @@ class FarmBot(TelegramClient):
                 return
 
             if text == '/go':
+                self.state = 0
                 self.logger.log('Включаюсь')
                 self.send(self.chats[SUPERGROUP], 'Включаюсь')
-                self.state = 0
                 return
 
             delay = 10
