@@ -78,8 +78,8 @@ class FarmBot(TelegramClient):
         # 1 — занят
         # 2 — жду ветер
         # 3 — выполняю прямую команду
-        # 4 — готовлюсь к защите
-        # 5 — готовлюсь к атаке
+        # 4 — защищаю
+        # 5 — атакую
         # -1 — заблокирован
         self.state = 0
 
@@ -159,10 +159,13 @@ class FarmBot(TelegramClient):
             return
 
         if isinstance(update, UpdateNewMessage):
-            self.acknowledge(update.message)
+            self.acknowledge(update.message, update.message.from_id)
 
-        elif isinstance(update, UpdateShortChatMessage, UpdateShortMessage):
-            self.acknowledge(update)
+        elif isinstance(update, UpdateShortMessage):
+            self.acknowledge(update, update.user_id)
+
+        elif isinstance(update, UpdateShortChatMessage):
+            self.acknowledge(update, update.from_id)
 
         elif isinstance(update, UpdateNewChannelMessage):
             if update.message.to_id.channel_id != SUPERGROUP:
@@ -175,27 +178,27 @@ class FarmBot(TelegramClient):
             # print(type(update))
             pass
 
-    def acknowledge(self, message):
+    def acknowledge(self, message, from_id):
         ''' Отправляет сообщение в нужную функцию '''
         # todo
-        if message.from_id == TELEGRAM:
+        if from_id == TELEGRAM:
             self.telegram(message)
             self.send_read_acknowledge(self.chats[TELEGRAM], message)
 
-        elif message.from_id == GAME:
+        elif from_id == GAME:
             self.game(message)
             self.send_read_acknowledge(self.chats[GAME], message)
 
-        elif message.from_id == TRADE:
-            self.forward(self.chats[TRADE], message, self.chats[ENOT])
+        elif from_id == TRADE:
+            self.forward(self.chats[TRADE], message.id, self.chats[ENOT])
             self.send_read_acknowledge(self.chats[TRADE], message)
 
-        elif message.from_id == ENOT:
+        elif from_id == ENOT:
             self.send_read_acknowledge(self.chats[ENOT], message)
 
         # todo: ask for deprecated captcha
-        elif message.from_id == CAPTCHA:
-            self.forward(self.chats[CAPTCHA], message, self.chats[GAME])
+        elif from_id == CAPTCHA:
+            self.forward(self.chats[CAPTCHA], message.id, self.chats[GAME])
             self.send_read_acknowledge(self.chats[CAPTCHA], message)
 
     def start(self):
@@ -240,6 +243,7 @@ class FarmBot(TelegramClient):
             elif now.hour % 4 == 1 and 5 <= now.minute <= 12:
                 if self.state != 0:
                     self.send(self.chats[GAME], '/report')
+                    time.sleep(2)
                     self.send(self.chats[TRADE], '/')
 
                     # Оповещаем Супергруппу о полученном приказе
@@ -292,8 +296,9 @@ class FarmBot(TelegramClient):
             self.exhaust = exhaust
 
         # Оповещаем о потере
-        elif 'Вы потеряли' in text:
-            self.forward(self.chats[GAME], message.id, self.chats[SUPERGROUP])
+        elif 'Твои результаты в бою' in text:
+            if 'Вы потеряли' in text:
+                self.forward(self.chats[GAME], message.id, self.chats[SUPERGROUP])
 
         # Прямые команды
         elif self.state == 3:
@@ -313,13 +318,13 @@ class FarmBot(TelegramClient):
 
         # Ответ на /hero
         elif '🏛Твои умения: ' in text:
-            self.logger.log('Получил профиль')
+            self.logger.log('Обновляю профиль')
             self.level = get_level(text)
             self.flag = get_flag(text)
 
         # Ответ на /inv
         elif 'Содержимое рюкзака' in text:
-            self.logger.log('Получил инвентарь')
+            self.logger.log('Обновляю инвентарь')
             self.equipment = get_equipment(text)
 
         # Готовимся к атаке конкретной точки
@@ -407,11 +412,13 @@ class FarmBot(TelegramClient):
             self.logger.log('Прямая команда: ' + text)
             if text == '/stop':
                 self.logger.log('Отключаюсь')
+                self.send(self.chats[SUPERGROUP], 'Отключаюсь')
                 self.state = -1
                 return
 
             if text == '/go':
                 self.logger.log('Включаюсь')
+                self.send(self.chats[SUPERGROUP], 'Включаюсь')
                 self.state = 0
                 return
 
