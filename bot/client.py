@@ -352,7 +352,7 @@ class FarmBot(TelegramClient):
 
         # Квесты
         elif 'Ты отправился' in text:
-            self.logger.log('Отправился!')
+            self.logger.log('Вперед!')
             self.state = 1
 
         # Слишком много боев
@@ -397,6 +397,7 @@ class FarmBot(TelegramClient):
         else:
             command = get_fight_command(text)
             if command:
+                self.send(self.chats[GAME], command)
                 if self.adventure == SHORE:
                     self.send(self.chats[SUPERGROUP], self.flag + SHORE + "! " + command)
                 else:

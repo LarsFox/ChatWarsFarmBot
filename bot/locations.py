@@ -5,6 +5,7 @@
 import random
 import time
 
+
 from bot.data import (
     SHORE, CAVE, CARAVANS, WOODS
 )
@@ -41,9 +42,7 @@ class Location(object):
     @property
     def travel(self):
         """ Определяет, идем или не идем в локацию """
-        if random.random() < self.prob:
-            return True
-        return False
+        return random.random() > self.prob
 
     @property
     def emoji(self):
