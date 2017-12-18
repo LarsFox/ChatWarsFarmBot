@@ -38,7 +38,6 @@ class Location(object):
     def postpone(self):
         """ Откладываем поход в локацию """
         seconds = random.random() * 1200 + 900
-        print('[{0:%Y-%m-%d %H:%M:%S}]'.format(datetime.datetime.now()), self.after, seconds)
         self.after = time.time() + seconds
         return seconds / 60
 
