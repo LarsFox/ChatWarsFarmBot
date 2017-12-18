@@ -478,7 +478,8 @@ class FarmBot(TelegramClient):
 
                 # С 54-й минуты выходим в бой
                 if now.hour % 4 == 0 and now.minute >= 54:
-                    self.send(self.chats[SUPERGROUP], 'Бросаю команду, готовлюсь к бою!')
+                    self.send(self.chats[SUPERGROUP],
+                              'Бросаю команду, готовлюсь к бою!')
                     self.times = 0
                     self.state = 0
                     return
