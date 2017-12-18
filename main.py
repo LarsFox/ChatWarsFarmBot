@@ -5,7 +5,6 @@
 
 
 import random as r
-# import resource
 import sys
 import threading
 import time
@@ -105,21 +104,6 @@ class Main(object):
                 raise err
 
 
-def memory():
-    """ Ограничивает потребление памяти
-    https://stackoverflow.com/questions/41105733 """
-    pass
-    # todo
-    # resource.setrlimit(resource.RLIMIT_AS, (128 * 1024 * 1024, -1))
-
-
 if __name__ == '__main__':
-    memory()
-
-    try:
-        MAIN = Main()
-        MAIN.launch()
-
-    except MemoryError:
-        sys.stderr.write('\n\nERROR: Memory Exception\n')
-        sys.exit(1)
+    MAIN = Main()
+    MAIN.launch()

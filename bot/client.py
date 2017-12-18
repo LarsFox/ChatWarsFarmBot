@@ -27,7 +27,7 @@ from bot.data import (
 from bot.helpers import (
     count_help, get_equipment, get_fight_command, get_flag, get_level, go_wasteland
 )
-from bot.locations import LOCATIONS
+from bot.locations import create_locations
 from bot.logger import Logger
 from sessions import API_ID, API_HASH, SUPERGROUP
 
@@ -100,7 +100,7 @@ class FarmBot(TelegramClient):
         self.location = 0
 
         # Все локации
-        self.locations = LOCATIONS.copy()
+        self.locations = create_locations()
         # Перезаписываем шансы локаций, если они указаны
         if 'adventures' in data:
             self.locations[2].command = data['adventures']
@@ -177,8 +177,8 @@ class FarmBot(TelegramClient):
             if update.message.to_id.channel_id != SUPERGROUP:
                 return
 
-            self.group(update.message)
             self.send_read_acknowledge(self.chats[SUPERGROUP], update.message)
+            self.group(update.message)
 
         else:
             # print(type(update))
@@ -188,12 +188,12 @@ class FarmBot(TelegramClient):
         ''' Отправляет сообщение в нужную функцию '''
         # todo
         if from_id == TELEGRAM:
-            self.telegram(message)
             self.send_read_acknowledge(self.chats[TELEGRAM], message)
+            self.telegram(message)
 
         elif from_id == GAME:
-            self.game(message)
             self.send_read_acknowledge(self.chats[GAME], message)
+            self.game(message)
 
         elif from_id == TRADE:
             self.forward(self.chats[TRADE], message.id, self.chats[ENOT])
@@ -532,6 +532,10 @@ class FarmBot(TelegramClient):
         ''' Отправляется во все локации '''
         for i, location in enumerate(self.locations):
             self.location = i
+
+            if self.state == 1:
+                self.logger.log("Отмена задания! Выполняю текущее")
+                return
 
             self.logger.log('Иду')
             # Пропускаем, если время идти в локацию еще не пришло
