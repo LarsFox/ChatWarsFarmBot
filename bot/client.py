@@ -241,7 +241,7 @@ class FarmBot(TelegramClient):
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
-            # С 47-й минуты выходим в бой
+            # С 54-й минуты выходим в бой
             if now.hour % 4 == 0 and now.minute >= 54:
                 if self.state != 4 and self.state != 5:
                     self.battle(DEFEND)
@@ -470,6 +470,16 @@ class FarmBot(TelegramClient):
                 delay += 10
 
             for _ in range(times):
+                # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
+                now = datetime.datetime.utcnow()
+
+                # С 54-й минуты выходим в бой
+                if now.hour % 4 == 0 and now.minute >= 54:
+                    self.send(self.chats[SUPERGROUP], 'Бросаю команду, готовлюсь к бою!')
+                    self.times = 0
+                    self.state = 0
+                    return
+
                 # Команда подходит, отправляем
                 self.times -= 1
                 self.send(self.chats[GAME], text)
