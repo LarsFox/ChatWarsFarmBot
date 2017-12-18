@@ -68,8 +68,7 @@ def get_fight_command(message):
     """ Извлекает команду боя в формате /fight_abcdef0123456789abc """
     if FIGHT in message:
         command = message.index(FIGHT)
-        return message[command:command+27]
-
+        return message[command:command + 27]
     return None
 
 

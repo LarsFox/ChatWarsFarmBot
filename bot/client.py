@@ -56,7 +56,8 @@ class FarmBot(TelegramClient):
 
         # Рассинхронизируем боты
         if log_file:
-            self.logger.sleep(600 * random.random(), 'Сон рассинхронизации: {}', False)
+            self.logger.sleep(600 * random.random(),
+                              'Сон рассинхронизации: {}', False)
 
         # Создаем файл сессии и устанавливаем параметры Телеграма
         # todo: here or later
@@ -150,7 +151,8 @@ class FarmBot(TelegramClient):
                     code_ok = self.sign_in(self.phone, code)
 
                 except SessionPasswordNeededError:
-                    verified = input('Введите пароль для двусторонней аутентификации: ')
+                    verified = input(
+                        'Введите пароль для двусторонней аутентификации: ')
                     code_ok = self.sign_in(password=verified)
 
             # Выходим, чтобы запросить код в следующем боте
@@ -233,7 +235,8 @@ class FarmBot(TelegramClient):
 
         # Начинаем отправлять команды
         while True:
-            self.logger.sleep(105, '~Сплю минуту в состоянии == '  + str(self.state), False)
+            self.logger.sleep(
+                105, '~Сплю минуту в состоянии == ' + str(self.state), False)
 
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
@@ -311,7 +314,8 @@ class FarmBot(TelegramClient):
         # Оповещаем о потере
         elif 'Твои результаты в бою' in text:
             if 'Вы потеряли' in text:
-                self.forward(self.chats[GAME], message.id, self.chats[SUPERGROUP])
+                self.forward(self.chats[GAME],
+                             message.id, self.chats[SUPERGROUP])
 
         # Прямые команды
         elif self.state == 3:
@@ -377,7 +381,8 @@ class FarmBot(TelegramClient):
 
         # Оповещаем о беде
         elif 'питомец в опасности!' in text:
-            self.forward(self.chats[SUPERGROUP], message.id, self.chats[SUPERGROUP])
+            self.forward(self.chats[SUPERGROUP],
+                         message.id, self.chats[SUPERGROUP])
 
         # Просим ручной выбор класса
         elif 'Определись со специализацией' in text:
@@ -394,7 +399,8 @@ class FarmBot(TelegramClient):
             self.logger.log('Выбираю характеристику')
             self.send(self.chats[GAME], self.primary)
             self.level += 1
-            self.send(self.chats[SUPERGROUP], 'Новый уровень: `{}`!'.format(self.level))
+            self.send(self.chats[SUPERGROUP],
+                      'Новый уровень: `{}`!'.format(self.level))
 
         # Пропускаем ситуацию, когда надеть нечего
         elif 'невозможно выполнить' in text:
@@ -409,9 +415,11 @@ class FarmBot(TelegramClient):
             if command:
                 self.send(self.chats[GAME], command)
                 if self.adventure == SHORE:
-                    self.send(self.chats[SUPERGROUP], self.flag + SHORE + "! " + command)
+                    self.send(self.chats[SUPERGROUP],
+                              self.flag + SHORE + "! " + command)
                 else:
-                    self.send(self.chats[SUPERGROUP], self.flag + ' ' + command)
+                    self.send(self.chats[SUPERGROUP],
+                              self.flag + ' ' + command)
 
             self.state = 0
 
