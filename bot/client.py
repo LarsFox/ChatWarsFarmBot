@@ -20,7 +20,7 @@ from telethon.utils import get_input_peer
 
 from bot.data import (
     CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
-    PLUS_ONE, LEVEL_UP, ATTACK, DEFEND, HERO,
+    PLUS_ONE, LEVEL_UP, ATTACK, DEFEND,
     SHORE, WAR, WAR_COMMANDS,
     COOLDOWN, MONSTER_COOLDOWN, HELLO, VERBS
 )
@@ -177,8 +177,8 @@ class FarmBot(TelegramClient):
             if update.message.to_id.channel_id != SUPERGROUP:
                 return
 
-            self.group(update.message)
             self.send_read_acknowledge(self.chats[SUPERGROUP], update.message)
+            self.group(update.message)
 
         else:
             # print(type(update))
@@ -188,12 +188,12 @@ class FarmBot(TelegramClient):
         ''' Отправляет сообщение в нужную функцию '''
         # todo
         if from_id == TELEGRAM:
-            self.telegram(message)
             self.send_read_acknowledge(self.chats[TELEGRAM], message)
+            self.telegram(message)
 
         elif from_id == GAME:
-            self.game(message)
             self.send_read_acknowledge(self.chats[GAME], message)
+            self.game(message)
 
         elif from_id == TRADE:
             self.forward(self.chats[TRADE], message.id, self.chats[ENOT])
@@ -587,10 +587,6 @@ class FarmBot(TelegramClient):
 
     def battle(self, order):
         ''' Переходит в режим атаки или защиты '''
-        sent = self.send(self.chats[GAME], HERO)
-        if not sent:
-            return
-
         time.sleep(2)
 
         sent = self.send(self.chats[GAME], order)
