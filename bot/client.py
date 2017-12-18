@@ -242,7 +242,11 @@ class FarmBot(TelegramClient):
                     self.battle(DEFEND)
 
             # Отправляем отчет, но только один раз
-            elif now.hour % 4 == 1 and 5 <= now.minute <= 12:
+            elif now.hour % 4 == 1 and now.minute <= 12:
+                # Первые пять минут обычно ветер
+                if now.minute <= 5:
+                    pass
+
                 if self.state != 0:
                     # Если атаковали, надеваем одежду для защиты и добычи
                     if self.state == 5:
@@ -282,9 +286,10 @@ class FarmBot(TelegramClient):
 
         # Сообщения с ветром самые приоритетные
         if 'завывает' in text:
+            state = self.state
             self.state = 2
             self.logger.sleep(300, 'Жду ветер 5 минут')
-            self.state = 0
+            self.state = state
 
         # На приключении
         elif 'сейчас занят другим приключением' in text:
@@ -345,7 +350,7 @@ class FarmBot(TelegramClient):
             self.send(self.chats[GAME], self.flag)
 
         # Готовимся к защите
-        elif 'Ты приготовился' in text:
+        elif ' приготовился к ' in text:
             if 'защите' in text:
                 self.state = 4
 
@@ -508,6 +513,7 @@ class FarmBot(TelegramClient):
 
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() < location.after:
+                self.logger.log('Следующий поход через {:.3f}'.format(location.after - time.time()))
                 continue
 
             # Если требует времени, идем как приключение
