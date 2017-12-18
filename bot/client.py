@@ -298,7 +298,10 @@ class FarmBot(TelegramClient):
 
         # На приключении
         elif 'сейчас занят другим приключением' in text:
+            state = self.state
             self.state = 1
+            self.logger.sleep(300, 'Подожду 5 минут')
+            self.state = state
 
         # Караваны
         elif '/go' in text:
@@ -545,6 +548,11 @@ class FarmBot(TelegramClient):
             if not location.travel:
                 self.logger.sleep(10, 'Пропускаю ' + location.console)
                 continue
+
+            # Прекращаем цикл, если получили прямую команду
+            if self.state == 3:
+                self.logger.log("Отмена задания! Прямая команда!")
+                return
 
             # Выбираем, куда пойдем
             emoji = location.emoji
