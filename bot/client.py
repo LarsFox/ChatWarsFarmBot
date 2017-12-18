@@ -535,7 +535,7 @@ class FarmBot(TelegramClient):
             self.logger.log('Иду')
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() < location.after:
-                self.logger.log('{}: следующий поход в через {:.3f}'.format(
+                self.logger.log('{}: следующий поход через {:.3f}'.format(
                     i, (location.after - time.time()) / 60
                 ))
                 continue
