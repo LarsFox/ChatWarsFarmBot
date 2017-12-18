@@ -273,7 +273,7 @@ class FarmBot(TelegramClient):
                 self.state = 0
 
             else:
-                if time.time() > self.exhaust:
+                if time.time() > self.exhaust and self.state == 0:
                     self.send_locations()
 
     def telegram(self, message):
