@@ -19,10 +19,10 @@ from sessions import SESSIONS, SUPERGROUP
 
 class Main(object):
     """ Запуск бота """
+
     def __init__(self):
         self.silent = "-s" in sys.argv
         self.login = "-l" in sys.argv
-        self.code = "-c" in sys.argv
 
         self.users = [
             arg.capitalize() for arg in sys.argv[1:]
@@ -35,17 +35,12 @@ class Main(object):
         if " " in self.users[0]:
             self.users = self.users[0].split()
 
-        reboot = "-r" in sys.argv
-        self.reboots = {user: reboot for user in self.users}
-        self.pipes = {user: 0 for user in self.users}
-
     def launch(self):
         """
         Запускает файл с параметрами:
 
         -s: выбираем куда логгировать: в файл или в консоль
         -l: проверяем логин и вводим телефон (только для одного пользователя)
-        -r: «перезапуск»: все действия откладываются, чтобы не спамить
 
         все остальные аргументы будут приняты как имена сессии
         """
@@ -82,28 +77,7 @@ class Main(object):
         while True:
             bot = FarmBot(user, params, self.silent)
 
-            # Ошибку при первичном подключении обрабатываем отдельно
             try:
-                # Начинаем с короткого сна
-                if self.reboots[user]:
-                    time.sleep(r.random() * 60)
-
-                bot.start()
-
-            except (ValueError, OSError,
-                    telethon.errors.RPCError,
-                    telethon.errors.BadMessageError) as err:
-                bot.logger.log("Не могу подключиться, немного посплю")
-                time.sleep(120 + 60*r.random())
-                continue
-
-            try:
-                if self.reboots[user]:
-                    for location in bot.locations:
-                        location.postpone()
-
-                    time.sleep(r.random() * 180)
-
                 # Поехали
                 bot.start()
 
@@ -117,7 +91,7 @@ class Main(object):
 
             except telethon.errors.BadMessageError:
                 bot.logger.log("Плохое сообщение, немного посплю")
-                time.sleep(120 + 60*r.random())
+                time.sleep(120 + 60 * r.random())
 
             except Exception as err:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -129,9 +103,6 @@ class Main(object):
                 bot.logger.log(text)
 
                 raise err
-
-            finally:
-                self.reboots[user] = True
 
 
 def memory():

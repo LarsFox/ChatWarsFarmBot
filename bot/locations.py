@@ -20,8 +20,10 @@ ADVENTURES = [
     {"command": WOODS, "level": 0, "chance": 1},
 ]
 
+
 class Location(object):
     """ Локация, любое место в игре, куда можем отправиться """
+
     def __init__(self, console, command, instant, prob):
         """
         console: название в консоли
@@ -67,6 +69,7 @@ class Random(Location):
 
 class Adventures(Location):
     """ Локация для всех приключений """
+
     def __init__(self, console, command, instant, prob):
         super().__init__(console, command, instant, prob)
         self.level = 0
