@@ -504,7 +504,7 @@ class FarmBot(TelegramClient):
             # self.send(self.chats[GAME], '/hero')
 
             # Пропускаем, если время идти в локацию еще не пришло
-            if time.time() > location.after:
+            if time.time() < location.after:
                 continue
 
             # Если требует времени, идем как приключение
