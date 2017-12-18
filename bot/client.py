@@ -27,7 +27,7 @@ from bot.data import (
 from bot.helpers import (
     count_help, get_equipment, get_fight_command, get_flag, get_level, go_wasteland
 )
-from bot.locations import LOCATIONS
+from bot.locations import create_locations
 from bot.logger import Logger
 from sessions import API_ID, API_HASH, SUPERGROUP
 
@@ -100,7 +100,7 @@ class FarmBot(TelegramClient):
         self.location = 0
 
         # Все локации
-        self.locations = LOCATIONS.copy()
+        self.locations = create_locations()
         # Перезаписываем шансы локаций, если они указаны
         if 'adventures' in data:
             self.locations[2].command = data['adventures']
