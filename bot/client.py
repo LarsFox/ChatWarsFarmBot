@@ -532,6 +532,10 @@ class FarmBot(TelegramClient):
         for i, location in enumerate(self.locations):
             self.location = i
 
+            if self.state == 1:
+                self.logger.log("Отмена задания! Выполняю текущее")
+                return
+
             self.logger.log('Иду')
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() < location.after:
