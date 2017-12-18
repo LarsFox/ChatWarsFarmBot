@@ -244,6 +244,10 @@ class FarmBot(TelegramClient):
             # Отправляем отчет, но только один раз
             elif now.hour % 4 == 1 and 5 <= now.minute <= 12:
                 if self.state != 0:
+                    # Если атаковали, надеваем одежду для защиты и добычи
+                    if self.state == 5:
+                        self.equip(DEFEND)
+
                     self.send(self.chats[GAME], '/report')
                     time.sleep(2)
                     self.send(self.chats[TRADE], '/')
@@ -344,7 +348,6 @@ class FarmBot(TelegramClient):
         elif 'Ты приготовился' in text:
             if 'защите' in text:
                 self.state = 4
-                self.equip(DEFEND)
 
             elif 'атаке' in text:
                 self.state = 5
@@ -574,7 +577,7 @@ class FarmBot(TelegramClient):
                 if not sent:
                     return
 
-                time.sleep(1)
+                time.sleep(5)
 
         self.logger.log('Завершаю команду {}'.format(state))
         return
