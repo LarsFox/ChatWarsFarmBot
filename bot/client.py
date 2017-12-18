@@ -20,7 +20,7 @@ from telethon.utils import get_input_peer
 
 from bot.data import (
     CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
-    PLUS_ONE, LEVEL_UP, ATTACK, DEFEND, HERO,
+    PLUS_ONE, LEVEL_UP, ATTACK, DEFEND,
     SHORE, WAR, WAR_COMMANDS,
     COOLDOWN, MONSTER_COOLDOWN, HELLO, VERBS
 )
@@ -532,6 +532,7 @@ class FarmBot(TelegramClient):
         for i, location in enumerate(self.locations):
             self.location = i
 
+            self.logger.log('Иду')
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() < location.after:
                 self.logger.log('{}: следующий поход в через {:.3f}'.format(
@@ -539,6 +540,7 @@ class FarmBot(TelegramClient):
                 ))
                 continue
 
+            self.logger.log('Точно иду')
             # Если требует времени, идем как приключение
             if not location.instant:
                 self.send(self.chats[GAME], '🗺 Квесты')
@@ -587,10 +589,6 @@ class FarmBot(TelegramClient):
 
     def battle(self, order):
         ''' Переходит в режим атаки или защиты '''
-        sent = self.send(self.chats[GAME], HERO)
-        if not sent:
-            return
-
         time.sleep(2)
 
         sent = self.send(self.chats[GAME], order)
