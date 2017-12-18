@@ -233,6 +233,8 @@ class FarmBot(TelegramClient):
 
         # Начинаем отправлять команды
         while True:
+            self.logger.sleep(105, '~Сплю минуту в состоянии == '  + str(self.state), False)
+
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
@@ -245,34 +247,34 @@ class FarmBot(TelegramClient):
             elif now.hour % 4 == 1 and now.minute <= 12:
                 # Первые пять минут обычно ветер
                 if now.minute <= 5:
-                    pass
+                    continue
 
-                if self.state != 0:
-                    # Если атаковали, надеваем одежду для защиты и добычи
-                    if self.state == 5:
-                        self.equip(DEFEND)
+                if self.state == 0:
+                    continue
 
-                    self.send(self.chats[GAME], '/report')
-                    time.sleep(2)
-                    self.send(self.chats[TRADE], '/')
+                # Если атаковали, надеваем одежду для защиты и добычи
+                if self.state == 5:
+                    self.equip(DEFEND)
 
-                    # Оповещаем Супергруппу о полученном приказе
-                    verb = VERBS[self.logger.girl][self.state]
+                self.send(self.chats[GAME], '/report')
+                time.sleep(2)
+                self.send(self.chats[TRADE], '/')
 
-                    if self.order:
-                        self.send(self.chats[SUPERGROUP], verb + self.order)
-                        self.order = None
+                # Оповещаем Супергруппу о полученном приказе
+                verb = VERBS[self.logger.girl][self.state]
 
-                    else:
-                        self.send(self.chats[SUPERGROUP], verb + self.flag)
+                if self.order:
+                    self.send(self.chats[SUPERGROUP], verb + self.order)
+                    self.order = None
 
-                    self.state = 0
+                else:
+                    self.send(self.chats[SUPERGROUP], verb + self.flag)
+
+                self.state = 0
 
             else:
                 if time.time() > self.exhaust:
                     self.send_locations()
-
-            self.logger.sleep(105, '~Сплю минуту в состоянии == '  + str(self.state), False)
 
     def telegram(self, message):
         ''' Записывает полученный от Телеграма код '''
@@ -508,12 +510,12 @@ class FarmBot(TelegramClient):
         ''' Отправляется во все локации '''
         for i, location in enumerate(self.locations):
             self.location = i
-            self.logger.log("Локация " + str(i))
-            # self.send(self.chats[GAME], '/hero')
 
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() < location.after:
-                self.logger.log('Следующий поход через {:.3f}'.format(location.after - time.time()))
+                self.logger.log('{}: следующий поход в через {:.3f}'.format(
+                    i, (location.after - time.time()) / 60
+                ))
                 continue
 
             # Если требует времени, идем как приключение
@@ -530,7 +532,9 @@ class FarmBot(TelegramClient):
             emoji = location.emoji
 
             # Отправляем сообщение с локацией
-            self.send(self.chats[GAME], emoji)
+            sent = self.send(self.chats[GAME], emoji)
+            if not sent:
+                continue
 
             # Откладываем следующий поход
             self.logger.log('Следующий {} через {:.3f} минут'.format(
