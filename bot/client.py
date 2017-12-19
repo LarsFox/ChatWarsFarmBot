@@ -223,7 +223,7 @@ class FarmBot(TelegramClient):
         self.add_update_handler(self.update_handler)
 
         # Определяем изначальные значения
-        while not self.equipment and not self.flag and not self.level:
+        while not self.equipment or not self.flag or not self.level:
             self.send(self.chats[GAME], '/hero')
             time.sleep(5)
             self.send(self.chats[GAME], '/inv')
