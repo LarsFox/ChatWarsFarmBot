@@ -93,8 +93,8 @@ class FarmBot(TelegramClient):
         # Последняя локация-квест
         self.adventure = None
 
-        # Монстр, с которым предстоит сразиться
-        self.fight = None
+        # Монстры, с которыми предстоит сразиться
+        self.fights = []
 
         # Последняя локация
         self.location = 0
@@ -434,8 +434,8 @@ class FarmBot(TelegramClient):
         text = message.message
 
         # Кто-то другой взял монстра, перезаписываем
-        if text == '+':
-            self.fight = None
+        if text.startswith('+'):
+            self.fights.remove('/' + text[2:])
             return
 
         parts = message.message.split(': ')
@@ -514,18 +514,18 @@ class FarmBot(TelegramClient):
             return
 
         # Не помогаем, если боев на сегодня слишком много
-        if time.time() < self.monster and self.state != 0:
+        if time.time() < self.monster or self.state != 0:
             return
 
-        self.fight = command
+        self.fights.append(command)
         # Спим случайное время, чтобы помощник был только один
-        time.sleep((120 * random.random()))
+        time.sleep((30 * random.random()))
 
         # Идем в бой, если никто другой не успел
-        if self.fight:
+        if command in self.fights:
             self.logger.log('Иду на помощь: {}'.format(command))
             self.send(self.chats[GAME], command)
-            self.send(self.chats[SUPERGROUP], '+')
+            self.send(self.chats[SUPERGROUP], '+ `{}`'.format(command[1:]))
         return
 
     def send_locations(self):
@@ -537,7 +537,6 @@ class FarmBot(TelegramClient):
                 self.logger.log("Отмена задания! Выполняю текущее")
                 return
 
-            self.logger.log('Иду')
             # Пропускаем, если время идти в локацию еще не пришло
             if time.time() < location.after:
                 self.logger.log('{}: следующий поход через {:.3f}'.format(
@@ -545,7 +544,6 @@ class FarmBot(TelegramClient):
                 ))
                 continue
 
-            self.logger.log('Точно иду')
             # Если требует времени, идем как приключение
             if not location.instant:
                 self.send(self.chats[GAME], '🗺 Квесты')
