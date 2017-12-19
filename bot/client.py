@@ -177,8 +177,8 @@ class FarmBot(TelegramClient):
             if update.message.to_id.channel_id != SUPERGROUP:
                 return
 
-            self.send_read_acknowledge(self.chats[SUPERGROUP], update.message)
             self.group(update.message)
+            self.send_read_acknowledge(self.chats[SUPERGROUP], update.message)
 
         else:
             # print(type(update))
@@ -435,8 +435,10 @@ class FarmBot(TelegramClient):
 
         # Кто-то другой взял монстра, перезаписываем
         if text.startswith('+'):
-            self.fights.remove('/' + text[2:])
-            return
+            command = '/' + text[2:]
+            if command in self.fights:
+                self.fights.remove('/' + text[2:])
+                return
 
         parts = message.message.split(': ')
 
