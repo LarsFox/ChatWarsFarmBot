@@ -60,7 +60,6 @@ class FarmBot(TelegramClient):
                               'Сон рассинхронизации: {}', False)
 
         # Создаем файл сессии и устанавливаем параметры Телеграма
-        # todo: here or later
         super().__init__('sessions/' + user, API_ID, API_HASH, update_workers=4)
 
         # Массив с entity, которые будут использоваться для запросов через Телетон
@@ -72,8 +71,7 @@ class FarmBot(TelegramClient):
         # Название сессии для прямых команд боту
         self.user = user
 
-        # self.user_id = 0
-
+        # todo: double check all the states
         # Состоятние бота
         # 0 — ничего не делаю
         # 1 — занят
@@ -92,6 +90,9 @@ class FarmBot(TelegramClient):
 
         # Последняя локация-квест
         self.adventure = None
+
+        # Через сколько вернусь из приключения # todo
+        self.back = 0
 
         # Монстры, с которыми предстоит сразиться
         self.fights = []
@@ -186,7 +187,6 @@ class FarmBot(TelegramClient):
 
     def acknowledge(self, message, from_id):
         ''' Отправляет сообщение в нужную функцию '''
-        # todo
         if from_id == TELEGRAM:
             self.send_read_acknowledge(self.chats[TELEGRAM], message)
             self.telegram(message)
@@ -245,8 +245,11 @@ class FarmBot(TelegramClient):
             if now.hour % 4 == 0 and now.minute >= 54:
                 if self.state != 4 and self.state != 5:
                     self.battle(DEFEND)
+                else:
+                    self.state = 0
 
             # Отправляем отчет, но только один раз
+            # todo: if state == 5, снять одежду атакующего
             elif now.hour % 4 == 1 and now.minute <= 12:
                 # Первые пять минут обычно ветер
                 if now.minute <= 5:
@@ -291,17 +294,17 @@ class FarmBot(TelegramClient):
 
         # Сообщения с ветром самые приоритетные
         if 'завывает' in text:
-            state = self.state
             self.state = 2
             self.logger.sleep(300, 'Жду ветер 5 минут')
-            self.state = state
+            if self.state == 2:
+                self.state = 0
 
         # На приключении
         elif 'сейчас занят другим приключением' in text:
-            state = self.state
             self.state = 1
             self.logger.sleep(300, 'Подожду 5 минут')
-            self.state = state
+            if self.state == 1:
+                self.state = 0
 
         # Караваны
         elif '/go' in text:
@@ -360,14 +363,17 @@ class FarmBot(TelegramClient):
 
         # Готовимся к защите
         elif ' приготовился к ' in text:
+            self.logger.log('В бой!')
             if 'защите' in text:
+                self.logger.log('Буду защищать!')
                 self.state = 4
 
             elif 'атаке' in text:
+                self.logger.log('Буду атаковать!')
                 self.state = 5
                 self.equip(ATTACK)
 
-        # Квесты
+        # Квесты # todo: self.back
         elif 'Ты отправился' in text:
             self.logger.log('Вперед!')
             self.state = 1
@@ -464,6 +470,10 @@ class FarmBot(TelegramClient):
                 self.send(self.chats[SUPERGROUP], 'Ну вот, опять работать!')
                 return
 
+            while self.state != 0:
+                self.logger.sleep(
+                    60, 'Пока не могу строить, посплю немного')
+
             delay = 2
             if '/repair' in text or '/build' in text:
                 delay = 300
@@ -471,10 +481,18 @@ class FarmBot(TelegramClient):
             self.state = 3
             self.times = times
 
+            self.logger.sleep(90 * random.random(),
+                              'Сон рассинхронизации прямой команды: {}', False)
+
             if times > 1:
                 delay += 10
 
             for _ in range(times):
+                if self.state != 3:
+                    self.logger.log("Прервали извне")
+                    self.times = 0
+                    return
+
                 # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
                 now = datetime.datetime.utcnow()
 
@@ -623,7 +641,6 @@ class FarmBot(TelegramClient):
 
     def send(self, entity, text):
         ''' Сокращение, потому что бот всегда использует Маркдаун '''
-        # todo: time.sleep(random?)
         # Не отправляем ничего в оффлайне
         if self.state == -1:
             return False
