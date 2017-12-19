@@ -181,8 +181,8 @@ class FarmBot(TelegramClient):
             self.group(update.message)
 
         else:
-            # print(type(update))
-            pass
+            print(type(update))
+            print(update)
 
     def acknowledge(self, message, from_id):
         ''' Отправляет сообщение в нужную функцию '''
