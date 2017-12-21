@@ -319,6 +319,11 @@ class FarmBot(TelegramClient):
             self.state = 1
             self.send_message(self.chats[GAME], '/go')
 
+        # Слишком много боев
+        elif 'Слишком много боев на сегодня' in text:
+            self.logger.log('На сегодня хватит боев')
+            self.monster = time.time() + MONSTER_COOLDOWN
+
         # Устал
         elif 'мало единиц выносливости' in text:
             self.logger.log('~Выдохся, поживу без приключений пару часов')
@@ -339,7 +344,8 @@ class FarmBot(TelegramClient):
                 self.send(self.chats[self.supegroup], 'Не из чего строить!')
                 return
 
-            self.forward(self.chats[GAME], message.id, self.chats[self.supegroup])
+            if "Ты пошел" not in message:
+                self.forward(self.chats[GAME], message.id, self.chats[self.supegroup])
 
             if self.times > 0:
                 self.logger.log("Осталось: " + str(self.times))
@@ -385,11 +391,6 @@ class FarmBot(TelegramClient):
         elif 'Ты отправился' in text:
             self.logger.log('Вперед!')
             self.state = 1
-
-        # Слишком много боев
-        elif 'Слишком много' in text:
-            self.logger.log('На сегодня хватит боев')
-            self.monster = time.time() + MONSTER_COOLDOWN
 
         # Ответ на квесты
         elif '🔋🔋' in text:
