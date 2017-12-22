@@ -319,14 +319,17 @@ class FarmBot(TelegramClient):
                 time.sleep(2)
 
                 # Оповещаем Супергруппу о полученном приказе
-                verb = VERBS[self.logger.girl][self.state]
+                verb = VERBS[self.logger.girl].get(self.state, "Слишком поздно! :(")
 
                 if self.state == 5:
                     self.send(self.chats[self.supergroup], verb + self.order)
                     self.order = None
 
-                else:
+                elif self.state == 4:
                     self.send(self.chats[self.supergroup], verb + self.flag)
+
+                else:
+                    self.send(self.chats[self.supergroup], verb)
 
                 self.set_state(0)
 
@@ -616,7 +619,7 @@ class FarmBot(TelegramClient):
             emoji = location.emoji
 
             # Отправляем сообщение с локацией
-            self.set_state(1)    
+            self.set_state(1)
             sent = self.send(self.chats[GAME], emoji)
             if not sent:
                 continue
