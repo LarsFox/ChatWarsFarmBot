@@ -633,19 +633,18 @@ class FarmBot(TelegramClient):
             # Локация не требует затрат времени, пропускаем задержку
             if location.instant:
                 self.logger.sleep(5, 'Сплю после мгновенной команды')
-                continue
 
             else:
                 # todo: delay
                 self.adventure = emoji
                 self.logger.sleep(300, '~Сплю после долгой команды', False)
 
-            self.set_state(0)
+                # И ради интереса запрашиваем свой профиль
+                if random.random() < 0.4:
+                    self.logger.log('Выпал запрос героя')
+                    self.send(self.chats[GAME], '/hero')
 
-            # И ради интереса запрашиваем свой профиль
-            if random.random() < 0.4:
-                self.logger.log('Выпал запрос героя')
-                self.send(self.chats[GAME], '/hero')
+            self.set_state(0)
 
         return
 
