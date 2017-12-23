@@ -21,7 +21,7 @@ from telethon.utils import get_input_peer
 from bot.data import (
     CHATS, TELEGRAM, GAME, TRADE, CAPTCHA, ENOT,
     PLUS_ONE, LEVEL_UP, ATTACK, DEFEND,
-    SHORE, WAR, WAR_COMMANDS,
+    SHORE, WAR, WAR_COMMANDS, HERO,
     COOLDOWN, MONSTER_COOLDOWN, HELLO, VERBS
 )
 from bot.helpers import (
@@ -285,8 +285,8 @@ class FarmBot(TelegramClient):
             # Бой каждые четыре часа. Час перед утренним боем — 8:00 UTC+0
             now = datetime.datetime.utcnow()
 
-            # С 54-й минуты выходим в бой
-            if now.hour % 4 == 0 and now.minute >= 54:
+            # С 47-й минуты выходим в бой
+            if now.hour % 4 == 0 and now.minute >= 47:
                 if self.state == 3:
                     self.send(self.chats[self.supergroup],
                               'Бросаю команду, готовлюсь к бою!')
@@ -640,6 +640,8 @@ class FarmBot(TelegramClient):
                 self.adventure = emoji
                 self.logger.sleep(300, '~Сплю после долгой команды', False)
 
+            self.set_state(0)
+
             # И ради интереса запрашиваем свой профиль
             if random.random() < 0.4:
                 self.logger.log('Выпал запрос героя')
@@ -649,6 +651,8 @@ class FarmBot(TelegramClient):
 
     def battle(self, order):
         ''' Переходит в режим атаки или защиты '''
+        sent = self.send(self.chats[HERO], order)
+
         if self.state != 0:
             return
 
