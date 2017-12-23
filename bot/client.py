@@ -650,7 +650,7 @@ class FarmBot(TelegramClient):
 
     def battle(self, order):
         ''' Переходит в режим атаки или защиты '''
-        sent = self.send(self.chats[HERO], order)
+        sent = self.send(self.chats[GAME], HERO)
 
         if self.state != 0:
             return
