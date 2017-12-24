@@ -296,11 +296,9 @@ class FarmBot(TelegramClient):
 
                 if self.state != 4 and self.state != 5:
                     self.battle(DEFEND)
-                else:
-                    self.set_state(0)
+
 
             # Отправляем отчет, но только один раз
-            # todo: if state == 5, снять одежду атакующего
             elif now.hour % 4 == 1 and now.minute <= 12:
                 # Первые пять минут обычно ветер
                 if now.minute <= 5:
