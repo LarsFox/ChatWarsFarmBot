@@ -225,25 +225,23 @@ class FarmBot(TelegramClient):
 
     def acknowledge(self, message, from_id):
         ''' Отправляет сообщение в нужную функцию '''
+        time.sleep(1.5)
+
         if from_id == TELEGRAM:
             self.send_read_acknowledge(self.chats[TELEGRAM], message)
-            time.sleep(2)
             self.telegram(message)
 
         elif from_id == GAME:
             self.game(message)
-            time.sleep(2)
             self.send_read_acknowledge(self.chats[GAME], message)
 
         elif from_id == TRADE:
             self.logger.log('Сообщение от торговца!')
             self.forward(self.chats[TRADE], message.id, self.chats[ENOT])
-            time.sleep(2)
             self.send_read_acknowledge(self.chats[TRADE], message)
 
         elif from_id == ENOT:
             self.logger.log('Сообщение от енота!')
-            time.sleep(2)
             self.send_read_acknowledge(self.chats[ENOT], message)
 
         # todo: ask for deprecated captcha
