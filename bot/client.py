@@ -164,9 +164,6 @@ class FarmBot(TelegramClient):
 
     def update_handler(self, update):
         ''' Получает обновления от Телетона и обрабатывает их '''
-        if self.state == -1:
-            return
-
         # todo: sometimes does not read supergroup
         if isinstance(update, UpdateNewMessage):
             self.acknowledge(update.message, update.message.from_id)
@@ -225,6 +222,9 @@ class FarmBot(TelegramClient):
 
     def acknowledge(self, message, from_id):
         ''' Отправляет сообщение в нужную функцию '''
+        if self.state == -1:
+            return
+
         time.sleep(1.5)
 
         if from_id == TELEGRAM:
@@ -512,8 +512,8 @@ class FarmBot(TelegramClient):
                 self.set_state(-1)
                 return
 
-            if text == '/wake':
-                if self.state == 0:
+            elif text == '/wake':
+                if self.state != -1:
                     self.send(self.chats[self.supergroup], 'Я не сплю!')
                     return
 
