@@ -186,10 +186,7 @@ class FarmBot(TelegramClient):
 
     def set_state(self, state):
         ''' Устанавливает состояние '''
-        if state == -1:
-            pass
-
-        elif self.state == 5:
+        if self.state == 5:
             if state != 0 and state != 2:
                 return False
 
@@ -486,7 +483,7 @@ class FarmBot(TelegramClient):
 
     def group(self, message):
         ''' Обрабатывает сообщение группы '''
-        while self.state != 0:
+        while self.state != 0 and self.state != -1:
             self.logger.sleep(60, 'Пока не могу приступить, посплю немного')
 
         text = message.message
