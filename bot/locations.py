@@ -99,7 +99,7 @@ RANDOM_COMMANDS = [
     "/hero",
     "/inv",
     "/report",
-    "/trades"
+    "/trades",
     "/top",
     "/worldtop",
     "/wtb_113",

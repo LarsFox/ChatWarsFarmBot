@@ -13,7 +13,7 @@ import traceback
 import telethon
 
 from bot.client import FarmBot
-from sessions import SESSIONS, SUPERGROUP
+from sessions import SESSIONS
 
 
 class Main(object):
@@ -98,7 +98,7 @@ class Main(object):
                                                  exc_value, exc_traceback)
 
                 text = ''.join(exc)
-                bot.send(bot.chats[SUPERGROUP], text)
+                bot.send(bot.chats[params['supergroup']], text)
                 bot.logger.log(text)
 
                 raise err

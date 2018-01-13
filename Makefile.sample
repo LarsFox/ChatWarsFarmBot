@@ -1,0 +1,10 @@
+# silenced, logging to file
+default:
+	python3 main.py Session1 Session2 -s
+
+# logging out loud to console
+run:
+	python3 main.py Session1 Session2 -s
+
+login:
+	python3 main.py Session1 -l
