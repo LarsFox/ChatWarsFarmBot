@@ -4,6 +4,7 @@
 
 bin
 sessions.py
+Makefile
 venv
 
 .vscode
