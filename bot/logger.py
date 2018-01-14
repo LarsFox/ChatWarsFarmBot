@@ -26,7 +26,18 @@ class Logger(object):
         Выводит сообщение в консоль или в файл
         text: строка-сообщение для вывода
         """
-        return
+        message = LOG_STRING.format(
+            datetime.datetime.now(),
+            self.user,
+            text
+        )
+
+        if self.log_file:
+            with open(self.log_file, "a") as target:
+                target.write(message + '\n')
+
+        else:
+            print(message)
 
     def sleep(self, duration, message=None, exact=True):
         """
