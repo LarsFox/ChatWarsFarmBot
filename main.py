@@ -108,7 +108,7 @@ class Main(object):
 def memory():
     """ Ограничивает потребление памяти
     https://stackoverflow.com/questions/41105733 """
-    resource.setrlimit(resource.RLIMIT_AS, (128 * 1024 * 1024, -1))
+    resource.setrlimit(resource.RLIMIT_DATA, (128 * 1024 * 1024, -1))
 
 
 if __name__ == '__main__':
