@@ -483,7 +483,10 @@ class FarmBot(TelegramClient):
 
     def group(self, message):
         ''' Обрабатывает сообщение группы '''
-        while self.state != 0 and self.state != -1:
+        for _ in range(20):
+            if self.state == 0 or self.state == -1:
+                break
+
             self.logger.sleep(60, 'Пока не могу приступить, посплю немного')
 
         text = message.message
