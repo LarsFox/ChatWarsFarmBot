@@ -93,6 +93,13 @@ class Main(object):
                 bot.logger.log("Плохое сообщение, немного посплю")
                 time.sleep(120 + 60 * r.random())
 
+            except ValueError as err:
+                if str(err) != "Number of retries reached 0.":
+                    raise err
+
+                bot.logger.log("Ошибка Телетона, немного посплю")
+                time.sleep(120 + 60 * r.random())
+
             except Exception as err:
                 exc_type, exc_value, exc_traceback = sys.exc_info()
                 exc = traceback.format_exception(exc_type,
