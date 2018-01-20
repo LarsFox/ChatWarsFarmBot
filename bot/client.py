@@ -268,7 +268,11 @@ class FarmBot(TelegramClient):
             time.sleep(10)
             tries += 1
 
+<<<<<<< HEAD
             if tries > 2:
+=======
+            if tries > 2
+>>>>>>> 48715a2064958baad5cbf2b473abb4c5f2828d9c
                 self.logger.sleep(1200, 'Кажется, бот лежит', False)
 
         # Отправляем сообщение о пробуждении
