@@ -186,6 +186,8 @@ class FarmBot(TelegramClient):
 
     def set_state(self, state):
         ''' Устанавливает состояние '''
+        self.logger.log('Запрос смены состояния c {} на {}'.format(self.state, state))
+
         if self.state == 5:
             if state != 0 and state != 2:
                 return False
@@ -246,7 +248,7 @@ class FarmBot(TelegramClient):
             self.forward(self.chats[CAPTCHA], message.id, self.chats[GAME])
             self.send_read_acknowledge(self.chats[CAPTCHA], message)
 
-    def start(self):
+    def run(self):
         ''' Главный цикл отправки сообщений '''
         # Подключаемся
         self.connect_with_code()

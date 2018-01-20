@@ -79,7 +79,7 @@ class Main(object):
 
             try:
                 # Поехали
-                bot.start()
+                bot.run()
 
             except OSError as err:
                 bot.logger.log("Ошибка: " + str(err))
