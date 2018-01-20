@@ -260,11 +260,16 @@ class FarmBot(TelegramClient):
         self.add_update_handler(self.update_handler)
 
         # Определяем изначальные значения
+        tries = 0
         while not self.equipment or not self.flag or not self.level:
             self.send(self.chats[GAME], '/hero')
             time.sleep(5)
             self.send(self.chats[GAME], '/inv')
             time.sleep(10)
+            tries += 1
+
+            if tries > 2
+                self.logger.sleep(1200, 'Кажется, бот лежит', False)
 
         # Отправляем сообщение о пробуждении
         self.logger.log('Первое пробуждение')
