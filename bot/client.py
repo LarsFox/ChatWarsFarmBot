@@ -490,12 +490,6 @@ class FarmBot(TelegramClient):
 
     def group(self, message):
         ''' Обрабатывает сообщение группы '''
-        for _ in range(20):
-            if self.state == 0 or self.state == -1:
-                break
-
-            self.logger.sleep(60, 'Пока не могу приступить, посплю немного')
-
         text = message.message
 
         # Кто-то другой взял монстра, перезаписываем
@@ -528,6 +522,12 @@ class FarmBot(TelegramClient):
                 self.logger.log('Проснулся, капитан!')
                 self.send(self.chats[self.supergroup], 'Ну вот, опять работать!')
                 return
+
+            for _ in range(20):
+                if self.state == 0 or self.state == -1:
+                    break
+
+                self.logger.sleep(60, 'Пока не могу приступить, посплю немного')
 
             delay = 2
             if '/repair' in text or '/build' in text:
