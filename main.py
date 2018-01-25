@@ -106,7 +106,7 @@ class Main(object):
                                                  exc_value, exc_traceback)
 
                 text = ''.join(exc)
-                bot.send(bot.chats[params['supergroup']], text)
+                bot.send(params['supergroup'], text)
                 bot.logger.log(text)
 
                 raise err

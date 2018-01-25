@@ -50,7 +50,7 @@ class Logger(object):
             duration += random.random() * 30
 
         if message:
-            if "{}" in message:
+            if "{" in message:
                 self.log(message.format(duration / 60))
 
             else:
