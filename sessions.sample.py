@@ -78,8 +78,8 @@ from bot.data import LEVEL_UP, DEFEND, WOODS, CAVE, SHORE, CARAVANS
 API_ID = 123456
 API_HASH = "0123456789abcdef0123456789abcdef"
 
-# ТГ номер супергруппы, в которую будем писать о боях
-SUPERGROUP = 1122334455
+# Ссылка для вступления в Супергруппу, в которую будем писать о боях
+SUPERGROUP = 't.me/joinchat/TH1S1sTH3B0t_LEO77IsCoOl'
 
 # Данные по каждой локации для посещения в порядке приоритетности
 # command: текст команды
@@ -100,7 +100,7 @@ SESSIONS = {
         "girl": True,             # влияет на род глаголов в 3-м лице :)
         "adventures": MASTER,     # локации на выбор, по умоланию ходит в лес
         LEVEL_UP: DEFEND,         # атрибут на выбор, по умолчанию — атака
-        'supegroup': SUPERGROUP   # номер супергруппы для отправки приказов
+        "supegroup": SUPERGROUP   # номер супергруппы для отправки приказов
     },
 
     "Session-2": {                # продолжаем для второго аккаунта
