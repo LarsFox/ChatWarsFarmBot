@@ -1,6 +1,5 @@
 *.pyc
 *.log
-*.session
 
 bin
 sessions.py

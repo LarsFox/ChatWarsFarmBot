@@ -1,1 +1,1 @@
-Telethon==0.10.1
+telethon

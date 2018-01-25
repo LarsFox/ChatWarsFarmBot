@@ -656,7 +656,7 @@ class FarmBot(TelegramClient):
         ''' Переходит в режим атаки или защиты '''
         sent = self.send(self.chats[GAME], HERO)
 
-        if self.state != 0:
+        if self.state != 0 or self.state != 4:
             return
 
         time.sleep(2)
@@ -714,7 +714,7 @@ class FarmBot(TelegramClient):
 
     def update_chats(self):
         ''' Обновляет список чатов на основе 100 последних диалогов '''
-        _, entities = self.get_dialogs(100)
+        dialogs = self.get_dialogs(100)
 
         for entity in entities:
             if entity.id in CHATS:
