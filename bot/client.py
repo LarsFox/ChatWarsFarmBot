@@ -67,11 +67,11 @@ class FarmBot(TelegramClient):
         # Ссылка на супергруппу
         self.supergroup = data['supergroup']
 
-        # Идентификатор супергруппы, который узнаем после подключения
-        self.supergroup_id = 0
-
         # Название сессии для прямых команд боту
         self.user = user
+
+        # Хранилище идентификаторов ключевых чатов
+        self.chats = {}
 
         # todo: double check all the states
         # Состояние бота
@@ -174,7 +174,7 @@ class FarmBot(TelegramClient):
             self.acknowledge(update, update.from_id)
 
         elif isinstance(update, UpdateNewChannelMessage):
-            if update.message.to_id.channel_id != self.supergroup_id:
+            if update.message.to_id.channel_id != self.chats[self.supergroup]:
                 return
 
             self.group(update.message)
@@ -227,20 +227,20 @@ class FarmBot(TelegramClient):
 
         time.sleep(1.5)
 
-        if from_id == TELEGRAM:
+        if from_id == self.chats[TELEGRAM]:
             self.send_read_acknowledge(TELEGRAM, message)
             self.telegram(message)
 
-        elif from_id == GAME:
+        elif from_id == self.chats[GAME]:
             self.game(message)
             self.send_read_acknowledge(GAME, message)
 
-        elif from_id == TRADE:
+        elif from_id == self.chats[TRADE]:
             self.logger.log('Сообщение от торговца!')
             self.forward(TRADE, message.id, ENOT)
             self.send_read_acknowledge(TRADE, message)
 
-        elif from_id == ENOT:
+        elif from_id == self.chats[ENOT]:
             self.logger.log('Сообщение от енота!')
             self.send_read_acknowledge(ENOT, message)
 
@@ -249,8 +249,8 @@ class FarmBot(TelegramClient):
         # Подключаемся
         self.connect_with_code()
 
-        # Получаем идентификатор супергруппы
-        self.supergroup_id = self.get_entity(self.supergroup).id
+        # Записываем все entity
+        self.update_chats()
 
         # Добавляем обработчик входящих событий
         self.add_update_handler(self.update_handler)
@@ -677,7 +677,7 @@ class FarmBot(TelegramClient):
         return
 
     def send(self, entity, text):
-        ''' Сокращение, потому что бот всегда использует Маркдаун '''
+        ''' Сокращение для отправки сообщений '''
         # Не отправляем ничего в оффлайне
         if self.state == -1:
             return False
@@ -701,3 +701,10 @@ class FarmBot(TelegramClient):
                 self.get_input_entity(to_entity)
             )
         )
+
+    def update_chats(self):
+        ''' Получает идентификаторы ключевых чатов '''
+        for chat in [TELEGRAM, GAME, TRADE, ENOT, self.supergroup]:
+            entity = self.get_entity(chat)
+            self.chats[chat] = entity.id
+        return
