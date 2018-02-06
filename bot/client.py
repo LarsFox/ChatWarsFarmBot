@@ -228,8 +228,8 @@ class FarmBot(TelegramClient):
         time.sleep(1.5)
 
         if from_id == self.chats[TELEGRAM]:
-            self.send_read_acknowledge(TELEGRAM, message)
             self.telegram(message)
+            self.send_read_acknowledge(TELEGRAM, message)
 
         elif from_id == self.chats[GAME]:
             self.game(message)
@@ -309,6 +309,7 @@ class FarmBot(TelegramClient):
                 if self.state == 5:
                     self.equip(DEFEND)
 
+                self.logger.sleep(60, "Задержка перед отчетом", False)
                 self.send(GAME, '/report')
                 time.sleep(2)
                 self.send(TRADE, '/')
@@ -426,7 +427,8 @@ class FarmBot(TelegramClient):
             elif 'атаке' in text:
                 self.logger.log('Буду атаковать!')
                 self.set_state(5)
-                self.equip(ATTACK)
+                if self.state != 5:
+                    self.equip(ATTACK)
 
         # Квесты # todo: self.back
         elif 'Ты отправился' in text:
@@ -552,6 +554,13 @@ class FarmBot(TelegramClient):
 
             return
 
+        # Команда на отмену приказа и обновление стока
+        if text == '!!':
+            self.set_state(0)
+            self.send(TRADE, '/')
+            time.sleep(2)
+            return
+
         # Приказ выйти в бой
         order = WAR.get(WAR_COMMANDS.get(text.lower()))
         if order:
@@ -642,7 +651,7 @@ class FarmBot(TelegramClient):
 
                 # И ради интереса запрашиваем свой профиль
                 if random.random() < 0.4:
-                    self.logger.log('Выпал запрос героя')
+                    self.logger.sleep(5, 'Выпал запрос героя')
                     self.send(GAME, '/hero')
 
             self.set_state(0)
