@@ -425,7 +425,7 @@ class FarmBot(TelegramClient):
                 self.set_state(4)
 
             elif 'атаке' in text:
-                self.logger.log('Буду атаковать!')
+                self.send(self.supergroup, 'Буду атаковать {}!'.format(self.order))
                 self.set_state(5)
                 if self.state != 5:
                     self.equip(ATTACK)
