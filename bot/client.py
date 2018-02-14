@@ -522,11 +522,9 @@ class FarmBot(TelegramClient):
                 self.send(self.supergroup, 'Ну вот, опять работать!')
                 return
 
-            for _ in range(20):
-                if self.state == 0 or self.state == -1:
-                    break
-
-                self.logger.sleep(60, 'Пока не могу приступить, посплю немного')
+            if self.state == 0 or self.state == -1:
+                self.send(self.supergroup, 'Пока не могу приступить!')
+                return
 
             delay = 2
             if '/repair' in text or '/build' in text:
@@ -535,7 +533,7 @@ class FarmBot(TelegramClient):
             self.set_state(3)
             self.times = times
 
-            self.logger.sleep(90 * random.random(),
+            self.logger.sleep(delay * random.random(),
                               'Сон рассинхронизации прямой команды: {:.3f}', False)
 
             if times > 1:
