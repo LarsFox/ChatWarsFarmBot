@@ -297,7 +297,7 @@ class FarmBot(TelegramClient):
 
 
             # Отправляем отчет, но только один раз
-            elif now.hour % 4 == 1 and now.minute <= 12:
+            elif now.hour % 4 == 1 and now.minute <= 23:
                 # Первые пять минут обычно ветер
                 if now.minute <= 5:
                     continue
@@ -445,15 +445,15 @@ class FarmBot(TelegramClient):
             self.forward(self.supergroup,
                          message.id, self.supergroup)
 
-        # Просим ручной выбор класса
-        elif 'Определись со специализацией' in text:
-            self.logger.log('Выберите мне класс!')
-            self.send(self.supergroup, 'Выберите мне класс!')
-
         # Запрашиваем повышение уровня
         elif LEVEL_UP in text:
             self.logger.log('Ух-ты, новый уровень!')
             self.send(GAME, LEVEL_UP)
+
+        # Просим ручной выбор класса
+        elif 'Определись со специализацией' in text:
+            self.logger.log('Выберите мне класс!')
+            self.send(self.supergroup, 'Выберите мне класс!')
 
         # Выбираем основную характеристику
         elif 'какую характеристику ты' in text:
