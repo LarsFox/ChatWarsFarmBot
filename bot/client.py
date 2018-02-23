@@ -522,7 +522,7 @@ class FarmBot(TelegramClient):
                 self.send(self.supergroup, 'Ну вот, опять работать!')
                 return
 
-            if self.state == 0 or self.state == -1:
+            if self.state != 0:
                 self.send(self.supergroup, 'Пока не могу приступить!')
                 return
 
