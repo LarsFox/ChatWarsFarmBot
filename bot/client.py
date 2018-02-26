@@ -701,13 +701,18 @@ class FarmBot(TelegramClient):
 
     def forward(self, from_entity, message_id, to_entity):
         ''' Пересылает сообщение от entity к entity '''
-        self(
-            ForwardMessagesRequest(
-                self.get_input_entity(from_entity),
-                [message_id],
-                self.get_input_entity(to_entity)
+        try:
+            self(
+                ForwardMessagesRequest(
+                    self.get_input_entity(from_entity),
+                    [message_id],
+                    self.get_input_entity(to_entity)
+                )
             )
-        )
+
+        except Exception as err:
+            self.send(self.supergroup, "Traceback: {}".format(err))
+            raise err
 
     def update_chats(self):
         ''' Получает идентификаторы ключевых чатов '''
