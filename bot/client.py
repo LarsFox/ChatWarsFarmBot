@@ -711,7 +711,9 @@ class FarmBot(TelegramClient):
             )
 
         except Exception as err:
-            self.send(self.supergroup, "Traceback: {}".format(err))
+            message = "Traceback: {}".format(err)
+            self.send(self.supergroup, message)
+            self.logger.log(message)
             raise err
 
     def update_chats(self):
