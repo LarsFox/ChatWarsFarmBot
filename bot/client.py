@@ -345,7 +345,7 @@ class FarmBot(TelegramClient):
         text = message.message
 
         # Сообщения с капчей самые приоритетные
-        if '/bath' in text or 'Мысли о термах' in text:
+        if '/bath' in text or 'термах' in text:
             self.send_message(self.supergroup, 'Баня! Ложусь спать, обновите мне капчу')
             self.set_state(2)
 
