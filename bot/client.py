@@ -198,7 +198,7 @@ class FarmBot(TelegramClient):
                 return False
 
         elif self.state == 3:
-            if state != 0:
+            if state != 0 and state != 2:
                 return False
 
         elif self.state == 2:
@@ -206,7 +206,7 @@ class FarmBot(TelegramClient):
                 return False
 
         elif self.state == 1:
-            if state != 0:
+            if state != 0 and state != 2:
                 return False
 
         elif self.state == 0:
@@ -344,8 +344,12 @@ class FarmBot(TelegramClient):
         ''' Отвечает на сообщение бота игры '''
         text = message.message
 
-        # Сообщения с ветром самые приоритетные
-        if 'завывает' in text:
+        # Сообщения с капчей самые приоритетные
+        if '/bath' in text or 'Мысли о термах' in text:
+            self.send_message(self.supergroup, 'Баня! Ложусь спать, обновите мне капчу')
+            self.set_state(2)
+
+        elif 'завывает' in text:
             self.set_state(2)
             self.logger.sleep(300, 'Жду ветер 5 минут')
             if self.state == 2:
